@@ -51,7 +51,7 @@ from email.mime.text import MIMEText
 from multiprocessing.connection import Listener
 import threading
 
-import requests
+#import requests
 import RPi.GPIO as GPIO
 import httplib2
 
