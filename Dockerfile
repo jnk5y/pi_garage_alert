@@ -11,9 +11,9 @@ RUN apt-get update && \
 #      python-setuptools \
 #      python-dev \
 #      libffi-dev && \
-    python-pip && \
-    pip install requests && \
-    pip install requests[security]
+#    python-pip && \
+#    pip install requests && \
+#    pip install requests[security]
 
 EXPOSE 6000
 
