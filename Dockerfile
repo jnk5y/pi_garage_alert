@@ -13,7 +13,8 @@ RUN apt-get update && \
      gcc \
      libffi-dev \
      python-pip && \
-    pip install RPi.GPIO 
+    pip install RPi.GPIO \
+     httplib2
 
 EXPOSE 6000
 
