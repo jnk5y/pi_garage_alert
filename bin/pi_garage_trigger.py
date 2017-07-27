@@ -7,9 +7,10 @@ if len(sys.argv) < 2:
     print "You must pass a parameter. (open, close, trigger, away, home, state)"
 
 else:
-    host = os.getenv('GARAGE_ALERT_HOST', 'localhost')
-    port = os.getenv('GARAGE_ALERT_PORT', 6000)
-    address = (host, int(port))
+#    host = os.getenv('GARAGE_ALERT_HOST', 'localhost')
+#    port = os.getenv('GARAGE_ALERT_PORT', 6000)
+#    address = (host, int(port))
+    address = ('localhost', 6000)
     conn = Client(address, authkey='secret password')
     conn.send_bytes(sys.argv[1])
     print conn.recv_bytes()
