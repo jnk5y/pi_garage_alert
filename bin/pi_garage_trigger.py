@@ -9,7 +9,7 @@ if len(sys.argv) < 2:
 else:
     host = os.getenv('GARAGE_ALERT_HOST', 'localhost')
     port = os.getenv('GARAGE_ALERT_PORT', 6000)
-    address = (host, port)
+    address = (host, int(port))
     conn = Client(address, authkey='secret password')
     conn.send_bytes(sys.argv[1])
     print conn.recv_bytes()
