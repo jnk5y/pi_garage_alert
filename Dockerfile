@@ -8,9 +8,10 @@ RUN chmod +x /usr/local/sbin/pi_garage_alert.py && \
 
 RUN apt-get update && \
     apt-get install python \
-      python-setuptools \
-      python-dev \
-#      libffi-dev && \
+     python-setuptools \
+     python-dev \
+     gcc \
+     libffi-dev && \
     python-pip && \
     pip install RPi.GPIO 
 
