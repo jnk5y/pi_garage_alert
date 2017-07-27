@@ -11,8 +11,8 @@ RUN apt-get update && \
      python-setuptools \
      python-dev \
      gcc \
-     libffi-dev && \
-    python-pip && \
+     libffi-dev \
+     python-pip && \
     pip install RPi.GPIO 
 
 EXPOSE 6000
