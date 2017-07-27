@@ -53,7 +53,7 @@ import threading
 
 #import requests
 import RPi.GPIO as GPIO
-import httplib2
+#import httplib2
 
 sys.path.append('/usr/local/etc')
 import pi_garage_alert_config as cfg
@@ -186,7 +186,7 @@ def doorTriggerLoop():
             else:
                 response = 'garage door alredy closed'
         elif received == 'state':
-            response = 'the garage door is' + state
+            response = 'the garage door is ' + state
         elif received == 'home':
             cfg.HOMEAWAY = 'home'
             response = 'alert status set to HOME'

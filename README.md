@@ -1,29 +1,33 @@
 Pi Garage Alert
 ===============
 
-Raspberry Pi Python script to email, tweet, or send an SMS if a garage door is left open.
+Docker container with a Raspberry Pi Python script to email or send an SMS (IFTTT) if a garage door is left open. It can also trigger the garage door to open/close.
 
-![Screenshot of garage door SMS alert](http://www.richlynch.com/wp-content/uploads/2013/07/garage_door_sms.png)
-
-Quick Start
+QUICK START
 ---------------
-
-Here is a heavily condensed quick start guide. New users are strongly encouraged to read the full documentation at http://www.richlynch.com/code/pi_garage_alert.
-
+BASIC RASPBERRY PI SETUP
 1. Equipment required
   1. Raspberry Pi model A or B
-	1. 2GB or larger SD card for the RPi filesystem
-	1. Magnetic sensor (e.g. http://www.smarthome.com/7455/Seco-Larm-SM-226L-Garage-Door-Contacts-for-Closed-Circuits/p.aspx)
+	1. 2GB or larger SD card
+	1. Magnetic sensor (e.g. https://www.amazon.com/uxcell-Stainless-Security-Magnetic-Contact/dp/B005DJLILI/ref=sr_1_10)
 	1. USB wifi adapter (if not using Ethernet)
-	1. USB power supply for RPi
-	1. 2 channel relay
-1. Connect one wire of the magnetic sensor to a GPIO pin on the RPi and the other to a ground pin on the RPi. It is a good idea to put a 1kohm resistor in series with the sensor to protect the RPi from damage if anything is misconfigured.
+	1. USB power supply for RPi (https://www.amazon.com/Edimax-EW-7811Un-150Mbps-Raspberry-Supports/dp/B003MTTJOY/ref=sr_1_4)
+	1. 2 channel relay (https://www.amazon.com/SunFounder-Channel-Optocoupler-Expansion-Raspberry/dp/B00E0NTPP4/ref=sr_1_1)
 1. Raspberry Pi initial setup
 	1. Follow the guide at http://elinux.org/RPi_Easy_SD_Card_Setup to write the Raspbian image to the SD card.
-	1. Boot the RPi and at raspi-config, expand the filesystem, set the "pi" account password, set the hostname, and enable SSH.
+	1. Boot the RPi and at raspi-config, expand the filesystem, set the "pi" account password, and enable SSH.
 	1. Reboot the Raspberry Pi
-1. Edit /etc/wpa_supplicant/wpa_supplicant.conf and configure the RPi to connect to your wifi network.
-1. Regenerate the ssh keys for security.
+  1. Edit /etc/wpa_supplicant/wpa_supplicant.conf and configure the RPi to connect to your wifi network.
+  1. Run 'sudo apt update' and 'sudo apt upgrade'
+  1. Run 'sudo apt install git'
+
+PI_GARAGE_ALERT SETUP USING DOCKER
+1. git clone https://github.com/jnk5y/pi_garage_alert.git
+1. From the pi_garage_alert directory run 'docker build -t garage-listener .'
+1. docker run --device /dev/ttyAMA0:/dev/ttyAMA0 --device /dev/mem:/dev/mem --privileged --name garage-container garage-listener
+
+
+
 1. Update the packages with `sudo apt-get update && sudo apt-get upgrade`, then install the dependencies:<br>
 sudo apt-get install python-setuptools python-dev libffi-dev<br>
 sudo easy_install pip<br>
@@ -38,11 +42,3 @@ sudo pip install requests[security]<br>
 sudo update-rc.d pi_garage_alert defaults<br>
 sudo service pi_garage_alert start<br>
 1. At this point, the Pi Garage Alert software should be running. You can view its log in /var/log/pi_garage_alert.log
-
-Other Uses
----------------
-
-The script will work with any sensor that can act like a switch. Some alternate uses include:
-
-* Basement or washing machine leak sensors
-* Window sensors
