@@ -32,8 +32,8 @@ GARAGE_DOORS = [
             {
                 'state': 'open',
                 'time': 300,
-                'start': 9,
-                'end': 12,
+                'start': 23,
+                'end': 7,
                 'recipients': [ 'ifttt:garage_event' ]
             },
             {

@@ -1,4 +1,4 @@
-FROM resin/rpi-raspbian
+FROM resin/rpi-raspbian:jessie
 
 COPY etc/pi_garage_alert_config.py /usr/local/etc/
 COPY bin/pi_garage_alert.py /usr/local/sbin/
