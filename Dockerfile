@@ -7,13 +7,12 @@ RUN chmod +x /usr/local/sbin/pi_garage_alert.py && \
     chmod +x /usr/local/etc/pi_garage_alert_config.py
 
 RUN apt-get update && \
-    apt-get install python 
+    apt-get install python \
 #      python-setuptools \
 #      python-dev \
 #      libffi-dev && \
-#    python-pip && \
-#    pip install requests && \
-#    pip install requests[security]
+    python-pip && \
+    pip install RPi.GPIO 
 
 EXPOSE 6000
 
