@@ -122,7 +122,7 @@ class IFTTT(object):
             self.logger.error("Exception sending IFTTT event: %s", sys.exc_info()[0])
 
 ##############################################################################
-# Sensor support
+# Garage Door Sensor support
 ##############################################################################
 
 def get_garage_door_state(pin):
@@ -145,36 +145,6 @@ def get_uptime():
         uptime_seconds = int(float(uptime_file.readline().split()[0]))
         uptime_string = str(timedelta(seconds=uptime_seconds))
     return uptime_string
-
-def get_gpu_temp():
-    """Return the GPU temperature as a Celsius float
-    """
-    cmd = ['vcgencmd', 'measure_temp']
-
-    measure_temp_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    output = measure_temp_proc.communicate()[0]
-
-    gpu_temp = 'unknown'
-    gpu_search = re.search('([0-9.]+)', output)
-
-    if gpu_search:
-        gpu_temp = gpu_search.group(1)
-
-    return float(gpu_temp)
-
-def get_cpu_temp():
-    """Return the CPU temperature as a Celsius float
-    """
-    cpu_temp = 'unknown'
-    with open("/sys/class/thermal/thermal_zone0/temp", "r") as temp_file:
-        cpu_temp = float(temp_file.read()) / 1000.0
-
-    return cpu_temp
-
-def rpi_status():
-    """Return string summarizing RPi status
-    """
-    return "CPU temp: %.1f, GPU temp: %.1f, Uptime: %s" % (get_gpu_temp(), get_cpu_temp(), get_uptime())
 
 ##############################################################################
 # Trigger garage door to open or close
@@ -377,7 +347,6 @@ class PiGarageAlert(object):
 
                 self.logger.info("Initial state of \"%s\" is %s", name, state)
 
-            status_report_countdown = 5
             while True:
                 for door in cfg.GARAGE_DOORS:
                     name = door['name']
@@ -426,18 +395,6 @@ class PiGarageAlert(object):
                         if send_alert:
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state, time_in_state)
                             alert_states[name] += 1
-
-                # Periodically log the status for debug and ensuring RPi doesn't get too hot
-                status_report_countdown -= 1
-                if status_report_countdown <= 0:
-                    status_msg = rpi_status()
-
-                    for name in door_states:
-                        status_msg += ", %s: %s/%d/%d" % (name, door_states[name], alert_states[name], (time.time() - time_of_last_state_change[name]))
-
-                    self.logger.info(status_msg)
-
-                    status_report_countdown = 600
 
                 # Poll every 1 second
                 time.sleep(1)
