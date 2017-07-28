@@ -10,7 +10,7 @@ else:
 #    host = os.getenv('GARAGE_ALERT_HOST', 'localhost')
 #    port = os.getenv('GARAGE_ALERT_PORT', 6000)
 #    address = (host, int(port))
-    address = ('localhost', 6000)
+    address = ('garage-container', 6000)
     conn = Client(address, authkey='secret password')
     conn.send_bytes(sys.argv[1])
     print conn.recv_bytes()
