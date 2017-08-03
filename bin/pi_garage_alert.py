@@ -51,9 +51,9 @@ from email.mime.text import MIMEText
 from multiprocessing.connection import Listener
 import threading
 
-#import requests
+import requests
 import RPi.GPIO as GPIO
-#import httplib2
+import httplib2
 
 sys.path.append('/usr/local/etc')
 import pi_garage_alert_config as cfg
@@ -300,35 +300,27 @@ class PiGarageAlert(object):
 
             # Banner
             self.logger.info("==========================================================")
-            self.logger.info("Pi Garage Listener and Alert Starting")
+            self.logger.info("Pi Garage Manager Starting")
 
-            # Use Raspberry Pi board pin numbers
-            self.logger.info("Configuring global settings")
-            GPIO.setmode(GPIO.BOARD)
-
-            # Configure the sensor pins as inputs with pull up resistors
-            for door in cfg.GARAGE_DOORS:
-                self.logger.info("Configuring pin %d for \"%s\"", door['pin'], door['name'])
-                GPIO.setup(door['pin'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-            # Configure the sensor pin for the relay to open and close the garage door
-#            GPIO.setup('7', GPIO.IN)
-
-            STATUS = 'home'
-
-            # Start garage door trigger thread
+            # Start garage door trigger listening thread
+            self.logger.info("Listening for commands")
             doorTriggerThread = threading.Thread(target=doorTriggerLoop)
             doorTriggerThread.setDaemon(True)
             doorTriggerThread.start()
 
+            self.logger.info("Configuring global settings")
+
+            # Setting default home/away setting
+            cfg.HOMEAWAY = 'home'
+
             # Last state of each garage door
-            door_states = dict()
+            door_state = ''
 
             # time.time() of the last time the garage door changed state
-            time_of_last_state_change = dict()
+            time_of_last_state_change = ''
 
             # Index of the next alert to send for each garage door
-            alert_states = dict()
+            alert_state = ''
 
             # Create alert sending objects
             alert_senders = {
@@ -336,44 +328,48 @@ class PiGarageAlert(object):
                 "IFTTT": IFTTT()
             }
 
+            # Use Raspberry Pi board pin numbers
+            GPIO.setmode(GPIO.BOARD)
+
+            # Configure the sensor pins as inputs with pull up resistors
+            door = cfg.GARAGE_DOOR:
+            self.logger.info("Configuring pin %d for \"%s\"", door['pin'], door['name'])
+            GPIO.setup(door['pin'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+            # Configure the sensor pin for the relay to open and close the garage door
+            # GPIO.setup('7', GPIO.IN)
+
             # Read initial states
-            for door in cfg.GARAGE_DOORS:
-                name = door['name']
-                state = get_garage_door_state(door['pin'])
+            name = door['name']
+            state = get_garage_door_state(door['pin'])
 
-                door_states[name] = state
-                time_of_last_state_change[name] = time.time()
-                alert_states[name] = 0
+            door_state = state
+            time_of_last_state_change = time.time()
+            alert_state = 0
 
-                self.logger.info("Initial state of \"%s\" is %s", name, state)
+            self.logger.info("Initial state of \"%s\" is %s", name, state)
 
             while True:
-                for door in cfg.GARAGE_DOORS:
-                    name = door['name']
-                    state = get_garage_door_state(door['pin'])
-                    time_in_state = time.time() - time_of_last_state_change[name]
+                name = door['name']
+                state = get_garage_door_state(door['pin'])
+                time_in_state = time.time() - time_of_last_state_change
 
-                    # Check if the door has changed state
-                    if door_states[name] != state:
-                        door_states[name] = state
-                        time_of_last_state_change[name] = time.time()
-                        self.logger.info("State of \"%s\" changed to %s after %.0f sec", name, state, time_in_state)
+                # Check if the door has changed state
+                if door_state != state:
+                    door_state = state
+                    time_of_last_state_change = time.time()
+                    self.logger.info("State of \"%s\" changed to %s after %.0f sec", name, state, time_in_state)
 
-                        # Reset alert when door changes state
-                        if alert_states[name] > 0:
-                            # Use the recipients of the last alert
-                            recipients = door['alerts'][alert_states[name] - 1]['recipients']
-                            send_alerts(self.logger, alert_senders, recipients, name, "%s is now %s" % (name, state), state, 0)
-                            alert_states[name] = 0
+                    # Reset alert when door changes state
+                    alert_state = 0
 
-                        # Reset time_in_state
-                        time_in_state = 0
+                    # Reset time_in_state
+                    time_in_state = 0
 
-                    # See if there are more alerts
-                    if len(door['alerts']) > alert_states[name]:
-                        # Get info about alert
-                        alert = door['alerts'][alert_states[name]]
+                # See if there are any alerts
+                for alert in door['alerts']:
 
+                    if alert_state == 0:
                         # Get start and end times and only alert if current time is in between
                         time_of_day = int(datetime.now().strftime("%H"))
                         start_time = alert['start']
@@ -394,7 +390,7 @@ class PiGarageAlert(object):
 
                         if send_alert:
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state, time_in_state)
-                            alert_states[name] += 1
+                            alert_state += 1
 
                 # Poll every 1 second
                 time.sleep(1)
