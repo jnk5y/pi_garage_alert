@@ -20,12 +20,7 @@ BASIC RASPBERRY PI SETUP
   	1. Edit /etc/wpa_supplicant/wpa_supplicant.conf and configure the RPi to connect to your wifi network.
   	1. Run `sudo apt update && sudo apt upgrade`
   	1. Run `sudo apt install git`
-<br><br>
-PI_GARAGE_ALERT SETUP USING DOCKER
-1. git clone https://github.com/jnk5y/pi_garage_alert.git
-1. From the pi_garage_alert directory run `docker build -t garage-listener .`
-1. Then run `docker run --device /dev/ttyAMA0:/dev/ttyAMA0 --device /dev/mem:/dev/mem --privileged --name garage-container garage-listener`
-<br><br>
+	
 RUNNING PI_GARAGE_ALERT MANUALLY
 1. sudo apt-get install python-setuptools python-dev libffi-dev<br>
 sudo easy_install pip<br>
