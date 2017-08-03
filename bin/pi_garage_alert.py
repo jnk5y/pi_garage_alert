@@ -152,9 +152,8 @@ def get_uptime():
 
 def doorTriggerLoop():
 
-    for door in cfg.GARAGE_DOORS:
-        state = get_garage_door_state(door['pin'])
-        status = cfg.HOMEAWAY
+    state = get_garage_door_state(cfg.PIN)
+    status = cfg.HOMEAWAY
 
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
     listener = Listener(address, authkey='secret password')
@@ -302,6 +301,15 @@ class PiGarageAlert(object):
             self.logger.info("==========================================================")
             self.logger.info("Pi Garage Manager Starting")
 
+            # Use Raspberry Pi board pin numbers
+            GPIO.setmode(GPIO.BOARD)
+            # Configure the sensor pins as inputs with pull up resistors
+            self.logger.info("Configuring pin %d for \"%s\"", cfg.PIN, cfg.NAME)
+            GPIO.setup(cfg.PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+ 
+	    # Configure the sensor pin for the relay to open and close the garage door
+            # GPIO.setup('7', GPIO.IN)
+
             # Start garage door trigger listening thread
             self.logger.info("Listening for commands")
             doorTriggerThread = threading.Thread(target=doorTriggerLoop)
@@ -328,20 +336,9 @@ class PiGarageAlert(object):
                 "IFTTT": IFTTT()
             }
 
-            # Use Raspberry Pi board pin numbers
-            GPIO.setmode(GPIO.BOARD)
-
-            # Configure the sensor pins as inputs with pull up resistors
-            door = cfg.GARAGE_DOOR:
-            self.logger.info("Configuring pin %d for \"%s\"", door['pin'], door['name'])
-            GPIO.setup(door['pin'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-            # Configure the sensor pin for the relay to open and close the garage door
-            # GPIO.setup('7', GPIO.IN)
-
             # Read initial states
-            name = door['name']
-            state = get_garage_door_state(door['pin'])
+            name = cfg.NAME
+            state = get_garage_door_state(cfg.PIN)
 
             door_state = state
             time_of_last_state_change = time.time()
@@ -350,8 +347,8 @@ class PiGarageAlert(object):
             self.logger.info("Initial state of \"%s\" is %s", name, state)
 
             while True:
-                name = door['name']
-                state = get_garage_door_state(door['pin'])
+                name = cfg.NAME
+                state = get_garage_door_state(cfg.PIN)
                 time_in_state = time.time() - time_of_last_state_change
 
                 # Check if the door has changed state
@@ -367,7 +364,7 @@ class PiGarageAlert(object):
                     time_in_state = 0
 
                 # See if there are any alerts
-                for alert in door['alerts']:
+                for alert in cfg.ALERTS:
 
                     if alert_state == 0:
                         # Get start and end times and only alert if current time is in between
