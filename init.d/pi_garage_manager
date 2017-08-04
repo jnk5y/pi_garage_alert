@@ -1,12 +1,12 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          pi_garage_alert
+# Provides:          pi_garage_manager
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Pi Garage Alert
-# Description:       Pi Garage Alert
+# Short-Description: Pi Garage Manager
+# Description:       Pi Garage Manager
 ### END INIT INFO
 
 # Author: Richard L. Lynch <rich@richlynch.com>
@@ -16,8 +16,8 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Pi Garage Alert"
-NAME=pi_garage_alert.py
+DESC="Pi Garage Manager"
+NAME=pi_garage_manager.py
 DAEMON=/usr/local/sbin/$NAME
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
