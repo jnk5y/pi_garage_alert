@@ -56,7 +56,7 @@ import RPi.GPIO as GPIO
 import httplib2
 
 sys.path.append('/usr/local/etc')
-import pi_garage_alert_config as cfg
+import pi_garage_manager_config as cfg
 
 ##############################################################################
 # Email support
