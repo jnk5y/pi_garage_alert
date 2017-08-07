@@ -1,4 +1,4 @@
-Pi Garage Alert
+Pi Garage Manager
 ===============
 
 Docker container with a Raspberry Pi Python script to email or send an SMS (IFTTT) if a garage door is left open. It can also trigger the garage door to open/close.
@@ -23,7 +23,7 @@ RASPBERRY PI INITIAL SETUP
 * Run `sudo apt update && sudo apt upgrade`
 * Run `sudo apt install git`
 	
-RUNNING PI_GARAGE_ALERT
+RUNNING PI_GARAGE_MANAGER
 * sudo apt-get install python-setuptools python-dev libffi-dev
 * sudo easy_install pip
 * sudo pip install requests
@@ -31,7 +31,7 @@ RUNNING PI_GARAGE_ALERT
 * Optional email configuration
 	* Configure postfix to send mail using Google SMTP, or your ISP's SMTP server
 	* This guide shows how to setup Google SMTP - https://www.linode.com/docs/email/postfix/configure-postfix-to-send-mail-using-gmail-and-google-apps-on-debian-or-ubuntu
-* Edit the etc/pi_garage_alert_config.py file
+* Edit the etc/pi_garage_manager_config.py file
 	* Modify the alert section to suit your alerting needs
 	* If you want an email alert add your email information setup from above
 	* if you want an IFTTT alert (notification or SMS) add your IFTTT key
