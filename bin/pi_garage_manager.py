@@ -198,8 +198,9 @@ def doorTriggerLoop():
         if trigger:
             GPIO.output(26, GPIO.LOW)
             print 'Door triggered'
+	    time.sleep(3)
+	    GPIO.output(26, GPIO.HIGH)
 
-        GPIO.output(26, GPIO.HIGH)
         trigger = False
         time.sleep(1)
 
