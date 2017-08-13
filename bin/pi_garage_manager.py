@@ -1,5 +1,5 @@
-#!/usr/bin/python2.7
-""" Pi Garage Alert
+#!/usr/bin/env python
+""" Pi Garage Manager
 
 Author: Richard L. Lynch <rich@richlynch.com>
 
