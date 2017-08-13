@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
-from socket
+import socket
 
 if len(sys.argv) < 2:
     print "You must pass a parameter. (open, close, trigger, away, home, state)"
