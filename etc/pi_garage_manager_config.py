@@ -34,7 +34,7 @@ ALERTS = [
 HOMEAWAY = 'home'
 
 # All messages will be logged to stdout and this file
-LOG_FILENAME = "/var/log/pi_garage_alert.log"
+LOG_FILENAME = "/var/log/pi_garage_manager.log"
 
 ##############################################################################
 # Email settings
