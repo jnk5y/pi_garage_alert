@@ -48,12 +48,12 @@ import smtplib
 import ssl
 import traceback
 from email.mime.text import MIMEText
-from multiprocessing.connection import Listener
+import socket
+import multiprocessing
 import threading
-
 import requests
-import RPi.GPIO as GPIO
 import httplib2
+import RPi.GPIO as GPIO
 
 sys.path.append('/usr/local/etc')
 import pi_garage_manager_config as cfg
@@ -155,14 +155,13 @@ def doorTriggerLoop():
     state = get_garage_door_state(cfg.PIN)
     status = cfg.HOMEAWAY
 
-    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
-    listener = Listener(address, authkey='secret password')
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("192.168.86.9", 6000))
+    sock.listen(1)
 
     while True:
-        conn = listener.accept()
-        # print 'connection accepted from', listener.last_accepted
-
-        received = conn.recv_bytes()
+        (conn, address) = sock.accept()
+        received = conn.recv(1024)
         response = 'unknown command'
         trigger = False
 
@@ -197,10 +196,10 @@ def doorTriggerLoop():
         print 'Received command to ' + received + ' the garage door. Response was ' + response
 
         if trigger:
-#            GPIO.setup('7', GPIO.OUT)
+            GPIO.output(26, GPIO.LOW)
             print 'Door triggered'
 
-#        GPIO.setup('7', GPIO.IN)
+        GPIO.output(26, GPIO.HIGH)
         trigger = False
         time.sleep(1)
 
@@ -304,11 +303,11 @@ class PiGarageAlert(object):
             # Use Raspberry Pi board pin numbers
             GPIO.setmode(GPIO.BOARD)
             # Configure the sensor pins as inputs with pull up resistors
-            self.logger.info("Configuring pin %d for \"%s\"", cfg.PIN, cfg.NAME)
+            self.logger.info("Configuring pin %d and 26 for \"%s\"", cfg.PIN, cfg.NAME)
             GPIO.setup(cfg.PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
  
 	    # Configure the sensor pin for the relay to open and close the garage door
-            # GPIO.setup('7', GPIO.IN)
+            GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
 
             # Start garage door trigger listening thread
             self.logger.info("Listening for commands")
