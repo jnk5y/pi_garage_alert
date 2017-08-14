@@ -47,3 +47,4 @@ Thanks to:
 Shane Rowley - https://github.com/smrowley
 Rich Lynch - https://www.richlynch.com/2013/07/27/pi_garage_alert_1/
 Driscocity's Idiot's Guide - http://www.driscocity.com/idiots-guide-to-a-raspberry-pi-garage-door-opener/
+
