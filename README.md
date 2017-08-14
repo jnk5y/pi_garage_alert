@@ -23,9 +23,8 @@ RASPBERRY PI INITIAL SETUP
 * Run `sudo apt update && sudo apt upgrade`
 * Run `sudo apt install git`
 
-WIRING THE PI, RELAY, AND GARAGE DOOR OPENER
-* 
-
+PI GARAGE MANAGER WIRING DIAGRAMS
+* Check out the wiki for the wiring diagrams - https://github.com/jnk5y/pi_garage_manager/wiki
 	
 RUNNING PI_GARAGE_MANAGER
 * sudo apt-get install python-setuptools python-dev libffi-dev
