@@ -22,6 +22,10 @@ RASPBERRY PI INITIAL SETUP
 * Edit /etc/wpa_supplicant/wpa_supplicant.conf and configure the RPi to connect to your wifi network.
 * Run `sudo apt update && sudo apt upgrade`
 * Run `sudo apt install git`
+
+WIRING THE PI, RELAY, AND GARAGE DOOR OPENER
+* 
+
 	
 RUNNING PI_GARAGE_MANAGER
 * sudo apt-get install python-setuptools python-dev libffi-dev
@@ -37,5 +41,5 @@ RUNNING PI_GARAGE_MANAGER
 	* if you want an IFTTT alert (notification or SMS) add your IFTTT key
 * Run the install.sh script `sudo bash ./install.sh`
 	* The install script will copy bin/pi_garage_manager.py to /usr/local/sbin, etc/pi_garage_manager_config.py to /usr/local/etc, init.d/pi_garage_manager to /etc/init.d and make pi_garage_manager.py start on startup
-* To run the pi_garage_manager service run `sudo sudo service pi_garage_manager start`
-* At this point, the Pi Garage Manager software should be running. You can view its log in /var/log/pi_garage_manager.log. You can use the pi_garage_trigger.py script found in bin/ to send commands to the service to open/close the garage door.
+* To run the pi_garage_manager service run `sudo service pi_garage_manager start`
+* At this point, the Pi Garage Manager software should be running. You can view its log in /var/log/pi_garage_manager.log. You can use the garage_trigger.py script found in bin/ to send commands to the service to open/close the garage door.
