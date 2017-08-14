@@ -42,3 +42,8 @@ RUNNING PI_GARAGE_MANAGER
 	* The install script will copy bin/pi_garage_manager.py to /usr/local/sbin, etc/pi_garage_manager_config.py to /usr/local/etc, init.d/pi_garage_manager to /etc/init.d and make pi_garage_manager.py start on startup
 * To run the pi_garage_manager service run `sudo service pi_garage_manager start`
 * At this point, the Pi Garage Manager software should be running. You can view its log in /var/log/pi_garage_manager.log. You can use the garage_trigger.py script found in bin/ to send commands to the service to open/close the garage door.
+
+Thanks to:
+Shane Rowley - https://github.com/smrowley
+Rich Lynch - https://www.richlynch.com/2013/07/27/pi_garage_alert_1/
+Driscocity's Idiot's Guide - http://www.driscocity.com/idiots-guide-to-a-raspberry-pi-garage-door-opener/
