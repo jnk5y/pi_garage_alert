@@ -49,6 +49,7 @@ import ssl
 import traceback
 from email.mime.text import MIMEText
 import socket
+from multiprocessing.connection import Client
 import multiprocessing
 import threading
 import requests
@@ -155,13 +156,12 @@ def doorTriggerLoop():
     state = get_garage_door_state(cfg.PIN)
     status = cfg.HOMEAWAY
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(("192.168.86.9", 6000))
-    sock.listen(1)
+    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
+    listener = Listener(address, authkey='secret password')
 
     while True:
-        (conn, address) = sock.accept()
-        received = conn.recv(1024)
+        conn = listener.accept()
+        received = conn.recv_bytes()
         response = 'unknown command'
         trigger = False
 
