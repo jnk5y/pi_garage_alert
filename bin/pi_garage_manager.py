@@ -157,7 +157,7 @@ def doorTriggerLoop():
     status = cfg.HOMEAWAY
 
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
-    listener = Listener(address, authkey='secret password')
+    listener = Listener(address)
 
     while True:
         conn = listener.accept()
