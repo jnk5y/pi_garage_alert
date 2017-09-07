@@ -9,7 +9,7 @@ if len(sys.argv) < 2:
 
 else:
     address = ('192.168.86.9', 6000)
-    conn = Client(address, authkey='secret password')
+    conn = Client(address)
     conn.send_bytes(sys.argv[1])
     print conn.recv_bytes()
     conn.close()
