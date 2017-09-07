@@ -171,19 +171,19 @@ def doorTriggerLoop():
                 response = 'closing garage door'
             else:
                 response = 'opening garage door'
-        elif received == 'open':
+        elif received == 'open' or received == 'up':
             if state == 'open':
                 response = 'garage door already open'
             else:
                 response = 'opening garage door'
                 trigger = True
-        elif received == 'close':
+        elif received == 'close' or received == 'down':
             if state == 'open':
                 response = 'closing garage door'
                 trigger = True
             else:
                 response = 'garage door alredy closed'
-        elif received == 'state':
+        elif received == 'state' or received == 'status':
             response = 'the garage door is ' + state
         elif received == 'home':
             cfg.HOMEAWAY = 'home'
