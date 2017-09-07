@@ -382,7 +382,7 @@ class PiGarageAlert(object):
                             if time_of_day >= start_time and time_of_day <= end_time and time_in_state > alert['time'] and state == alert['state']:
                                 send_alert = True
                         elif start_time > end_time:
-                            if time_of_day >= start_time or time_of_day <= end_time and time_in_state > alert['time'] and state == alert['state']:
+                            if (time_of_day >= start_time or time_of_day <= end_time) and time_in_state > alert['time'] and state == alert['state']:
                                 send_alert = True
 
                         if send_alert:
