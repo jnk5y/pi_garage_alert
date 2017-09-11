@@ -126,13 +126,13 @@ class IFTTT(object):
 # Garage Door Sensor support
 ##############################################################################
 
-def get_garage_door_state(pin):
+def get_garage_door_state():
     """Returns the state of the garage door on the specified pin as a string
 
     Args:
         pin: GPIO pin number.
     """
-    if GPIO.input(pin): # pylint: disable=no-member
+    if GPIO.input(15): # pylint: disable=no-member
         state = 'open'
     else:
         state = 'closed'
@@ -153,7 +153,7 @@ def get_uptime():
 
 def doorTriggerLoop():
 
-    state = get_garage_door_state(cfg.PIN)
+    state = get_garage_door_state()
     status = cfg.HOMEAWAY
 
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
@@ -304,8 +304,8 @@ class PiGarageAlert(object):
             # Use Raspberry Pi board pin numbers
             GPIO.setmode(GPIO.BOARD)
             # Configure the sensor pins as inputs with pull up resistors
-            self.logger.info("Configuring pin %d and 26 for \"%s\"", cfg.PIN, cfg.NAME)
-            GPIO.setup(cfg.PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            self.logger.info("Configuring pin 15 and 26 for \"%s\"", cfg.NAME)
+            GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
  
 	    # Configure the sensor pin for the relay to open and close the garage door
             GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
@@ -338,7 +338,7 @@ class PiGarageAlert(object):
 
             # Read initial states
             name = cfg.NAME
-            state = get_garage_door_state(cfg.PIN)
+            state = get_garage_door_state()
 
             door_state = state
             time_of_last_state_change = time.time()
@@ -348,7 +348,7 @@ class PiGarageAlert(object):
 
             while True:
                 name = cfg.NAME
-                state = get_garage_door_state(cfg.PIN)
+                state = get_garage_door_state()
                 time_in_state = time.time() - time_of_last_state_change
 
                 # Check if the door has changed state
