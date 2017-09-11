@@ -27,10 +27,11 @@ PI GARAGE MANAGER WIRING DIAGRAMS
 * Check out the wiki for the wiring diagrams - https://github.com/jnk5y/pi_garage_manager/wiki
 	
 RUNNING PI_GARAGE_MANAGER
-* sudo apt-get install python-setuptools python-dev libffi-dev
-* sudo easy_install pip
-* sudo pip install requests
-* sudo pip install requests[security]
+* `sudo apt-get install python-setuptools python-dev libffi-dev`
+* `sudo easy_install pip`
+* `sudo pip install requests`
+* `sudo pip install requests[security]`
+* `sudo pip install httplib2`
 * Optional email configuration
 	* Configure postfix to send mail using Google SMTP, or your ISP's SMTP server
 	* This guide shows how to setup Google SMTP - https://www.linode.com/docs/email/postfix/configure-postfix-to-send-mail-using-gmail-and-google-apps-on-debian-or-ubuntu
