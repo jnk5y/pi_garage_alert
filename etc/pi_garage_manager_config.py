@@ -7,7 +7,6 @@
 # Describes the garage door being monitored
 # time is in seconds
 # start and end hours can be [0-23] - will alert only within those hours
-PIN = 15,
 NAME = "Garage Door",
 ALERTS = [
     {
