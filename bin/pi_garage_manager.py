@@ -184,7 +184,7 @@ def doorTriggerLoop():
             else:
                 response = 'Garage door alredy closed'
         elif received == 'state' or received == 'status':
-            response = 'The garage door is ' + state
+            response = state
         elif received == 'home':
             cfg.HOMEAWAY = 'home'
             response = 'Alert status set to HOME'
@@ -193,7 +193,7 @@ def doorTriggerLoop():
             response = 'Alert status set to AWAY'
 
         conn.send_bytes(response)
-        print 'Received command of' + received + '. ' + response
+        print 'Received command of ' + received + '. ' + response
 
         if trigger:
             GPIO.output(26, GPIO.LOW)
