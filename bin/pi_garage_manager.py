@@ -304,7 +304,7 @@ class PiGarageAlert(object):
             # Use Raspberry Pi board pin numbers
             GPIO.setmode(GPIO.BOARD)
             # Configure the sensor pins as inputs with pull up resistors
-            self.logger.info("Configuring pin 15 and 26 for \"%s\"", cfg.NAME)
+            self.logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
             GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
  
 	    # Configure the sensor pin for the relay to open and close the garage door
@@ -355,7 +355,7 @@ class PiGarageAlert(object):
                 if door_state != state:
                     door_state = state
                     time_of_last_state_change = time.time()
-                    self.logger.info("State of \"%s\" changed to %s after %.0f sec", name, state, time_in_state)
+                    self.logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
 
                     # Reset alert when door changes state
                     alert_state = 0
