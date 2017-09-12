@@ -7,7 +7,7 @@
 # Describes the garage door being monitored
 # time is in seconds
 # start and end hours can be [0-23] - will alert only within those hours
-NAME = "Garage Door",
+NAME = "Garage Door"
 ALERTS = [
     {
         'state': 'open',
