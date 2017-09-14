@@ -161,7 +161,7 @@ def doorTriggerLoop():
 
     while True:
         conn = listener.accept()
-        received = conn.recv_bytes()
+        received = conn.recv_bytes().lower()
         response = 'unknown command'
         trigger = False
 
@@ -183,14 +183,16 @@ def doorTriggerLoop():
                 trigger = True
             else:
                 response = 'Garage door alredy closed'
-        elif received == 'state' or received == 'status':
-            response = state
-        elif received == 'home':
+	elif received == 'home' or received == 'set to home':
             cfg.HOMEAWAY = 'home'
             response = 'Alert status set to HOME'
-        elif received == 'away':
+        elif received == 'away' or received == 'set to away':
             cfg.HOMEAWAY = 'away'
             response = 'Alert status set to AWAY'
+        elif received == 'state' or received == 'status':
+            response = state
+	elif received == 'home-away-state':
+	    response = cfg.HOMEAWAY
 
         conn.send_bytes(response)
         print 'Received command of ' + received + '. ' + response
@@ -198,7 +200,7 @@ def doorTriggerLoop():
         if trigger:
             GPIO.output(26, GPIO.LOW)
             print 'Door triggered'
-	    time.sleep(3)
+	    time.sleep(2)
 	    GPIO.output(26, GPIO.HIGH)
 
         trigger = False
