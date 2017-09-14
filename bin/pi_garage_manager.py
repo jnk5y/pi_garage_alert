@@ -189,7 +189,7 @@ def doorTriggerLoop():
         elif received == 'away' or received == 'set to away':
             cfg.HOMEAWAY = 'away'
             response = 'Alert status set to AWAY'
-        elif received == 'state' or received == 'status':
+        elif received == 'state' or received == 'status' or received == 'door-state':
             response = state
 	elif received == 'home-away-state':
 	    response = cfg.HOMEAWAY
