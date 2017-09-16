@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """ Pi Garage Manager
 
-Author: Richard L. Lynch <rich@richlynch.com>
+Authors: Richard L. Lynch <rich@richlynch.com> and John Kyrus
 
 Description: Emails, tweets, or sends an SMS if a garage door is left open
-too long.
+too long and allows you to open and close the door remotely.
 
 Learn more at http://www.richlynch.com/code/pi_garage_alert
 """
@@ -152,10 +152,6 @@ def get_uptime():
 ##############################################################################
 
 def doorTriggerLoop():
-
-    state = get_garage_door_state()
-    status = cfg.HOMEAWAY
-
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
     listener = Listener(address)
 
@@ -190,7 +186,7 @@ def doorTriggerLoop():
             cfg.HOMEAWAY = 'away'
             response = 'Alert status set to AWAY'
         elif received == 'state' or received == 'status' or received == 'door-state':
-            response = state
+            response = get_garage_door_state()
 	elif received == 'home-away-state':
 	    response = cfg.HOMEAWAY
 
