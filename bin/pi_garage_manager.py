@@ -185,10 +185,8 @@ def doorTriggerLoop():
         elif received == 'away' or received == 'set to away':
             cfg.HOMEAWAY = 'away'
             response = 'set to away'
-        elif received == 'state' or received == 'status' or received == 'door-state':
-            response = get_garage_door_state()
-	elif received == 'home-away-state':
-	    response = cfg.HOMEAWAY
+        elif received == 'state' or received == 'status':
+            response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
 
         conn.send_bytes(response)
         print 'received ' + received + '. ' + response
