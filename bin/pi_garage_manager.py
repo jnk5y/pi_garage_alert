@@ -164,34 +164,34 @@ def doorTriggerLoop():
         if received == 'trigger':
             trigger = True
             if state == 'open':
-                response = 'Closing garage door'
+                response = 'closing'
             else:
-                response = 'Opening garage door'
+                response = 'opening'
         elif received == 'open' or received == 'up':
             if state == 'open':
-                response = 'Garage door already open'
+                response = 'already open'
             else:
-                response = 'Opening garage door'
+                response = 'opening'
                 trigger = True
         elif received == 'close' or received == 'down':
             if state == 'open':
-                response = 'Closing garage door'
+                response = 'closing'
                 trigger = True
             else:
-                response = 'Garage door alredy closed'
+                response = 'already closed'
 	elif received == 'home' or received == 'set to home':
             cfg.HOMEAWAY = 'home'
-            response = 'Alert status set to HOME'
+            response = 'set to home'
         elif received == 'away' or received == 'set to away':
             cfg.HOMEAWAY = 'away'
-            response = 'Alert status set to AWAY'
+            response = 'set to away'
         elif received == 'state' or received == 'status' or received == 'door-state':
             response = get_garage_door_state()
 	elif received == 'home-away-state':
 	    response = cfg.HOMEAWAY
 
         conn.send_bytes(response)
-        print 'Received command of ' + received + '. ' + response
+        print 'received ' + received + '. ' + response
 
         if trigger:
             GPIO.output(26, GPIO.LOW)
