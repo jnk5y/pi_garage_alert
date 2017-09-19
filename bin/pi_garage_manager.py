@@ -124,85 +124,32 @@ class IFTTT(object):
             self.logger.error("Exception sending IFTTT event: %s", sys.exc_info()[0])
 
 ##############################################################################
-# Garage Door Sensor support
+# FIREBASE support https://firebase.google.com/docs/cloud-messaging/
 ##############################################################################
 
-def get_garage_door_state():
-    """Returns the state of the garage door on the specified pin as a string
+class Firebase(object):
+    """Class to send Firebase notification triggers using Google's FCM"""
 
-    Args:
-        pin: GPIO pin number.
-    """
-    if GPIO.input(15): # pylint: disable=no-member
-        state = 'open'
-    else:
-        state = 'closed'
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
-    return state
+    def send_trigger(self, event, value1, value2, value3):
+        """Send a Firebase event using the FCM.
 
-def get_uptime():
-    """Returns the uptime of the RPi as a string
-    """
-    with open('/proc/uptime', 'r') as uptime_file:
-        uptime_seconds = int(float(uptime_file.readline().split()[0]))
-        uptime_string = str(timedelta(seconds=uptime_seconds))
-    return uptime_string
+        Get the key by following the URL at https://console.firebase.google.com/
 
-##############################################################################
-# Listener thread for get or setting state
-##############################################################################
+        Args:
+            event: Event name
+            value1, value2, value3: Optional data to supply to Firebase.
+        """
+        self.logger.info("Sending Firebase event \"%s\": value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", event, value1, value2, value3)
 
-def doorTriggerLoop():
-    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
-    listener = Listener(address)
-
-    while True:
-        conn = listener.accept()
-        received = conn.recv_bytes().lower()
-        response = 'unknown command'
-        trigger = False
-
-        if received == 'trigger':
-            trigger = True
-            if state == 'open':
-                response = 'closing'
-            else:
-                response = 'opening'
-        elif received == 'open' or received == 'up':
-            if state == 'open':
-                response = 'already open'
-            else:
-                response = 'opening'
-                trigger = True
-        elif received == 'close' or received == 'down':
-            if state == 'open':
-                response = 'closing'
-                trigger = True
-            else:
-                response = 'already closed'
-	elif received == 'home' or received == 'set to home':
-            cfg.HOMEAWAY = 'home'
-            response = 'set to home'
-        elif received == 'away' or received == 'set to away':
-            cfg.HOMEAWAY = 'away'
-            response = 'set to away'
-        elif received == 'state' or received == 'status':
-            response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-
-        conn.send_bytes(response)
-        print 'received ' + received + '. ' + response
-
-        if trigger:
-            GPIO.output(26, GPIO.LOW)
-            print 'Door triggered'
-	    time.sleep(2)
-	    GPIO.output(26, GPIO.HIGH)
-
-        trigger = False
-        time.sleep(1)
-
-    conn.close()
-    listener.close()
+        headers = {'Content-type': 'application/json', 'Authorization': 'key=AAAAPWZAUno:APA91bFAO4qytE_9nJLgjN9yTnnmW0tSQxRflZI_D7vVxVR6kOHMsV4xAPgY7nuXeAXG9PabqfB-GbgWc4J8pm7inObVX91NeJ-QGsV90o-YfL3vmvXl63-sV2AeCHngrYbAGXr2t-tk'}
+        payload = '{ "notification": { "title": "this is the title", "body": "this is the body" }, "to": "dsM1GByRyUg:APA91bH9pAdF0awyeEB-95Q96MimYkR3ATI4_qRBNPwWb8L1ygfNxNszYpJjeQ91_KcIDgvl-ZwZAzxDgrSxxFfG5VkoWRRcg51TMr25CyZqB86IkXmilS6otVjfQntM5t3Wyn_Xiloi" }'
+        try:
+            requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, data=json.dumps(payload))
+        except:
+            self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
 
 ##############################################################################
 # Logging and alerts
@@ -222,6 +169,8 @@ def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_
             alert_senders['Email'].send_email(recipient[6:], subject, msg)
         elif recipient[:6] == 'ifttt:':
             alert_senders['IFTTT'].send_trigger(recipient[6:], subject, state, '%d' % (time_in_state))
+	elif recipient[] == 'firebase':
+            alert_senders['Firebase'].send_trigger('Garage', subject, state, '%d' % (time_in_state))
         else:
             logger.error("Unrecognized recipient type: %s", recipient)
 
@@ -279,6 +228,89 @@ def handler(signum = None, frame = None):
 
 for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
     signal.signal(sig, handler)
+
+##############################################################################
+# Garage Door Sensor support
+##############################################################################
+
+def get_garage_door_state():
+    """Returns the state of the garage door on the specified pin as a string
+
+    Args:
+        pin: GPIO pin number.
+    """
+    if GPIO.input(15): # pylint: disable=no-member
+        state = 'open'
+    else:
+        state = 'closed'
+
+    return state
+
+def get_uptime():
+    """Returns the uptime of the RPi as a string
+    """
+    with open('/proc/uptime', 'r') as uptime_file:
+        uptime_seconds = int(float(uptime_file.readline().split()[0]))
+        uptime_string = str(timedelta(seconds=uptime_seconds))
+    return uptime_string
+
+##############################################################################
+# Listener thread for getting and setting state
+##############################################################################
+
+def doorTriggerLoop():
+    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
+    listener = Listener(address)
+
+    while True:
+        conn = listener.accept()
+        received = conn.recv_bytes().lower()
+        response = 'unknown command'
+        trigger = False
+
+        if received == 'trigger':
+            trigger = True
+            if state == 'open':
+                response = 'closing'
+            else:
+                response = 'opening'
+        elif received == 'open' or received == 'up':
+            if state == 'open':
+                response = 'already open'
+            else:
+                response = 'opening'
+                trigger = True
+        elif received == 'close' or received == 'down':
+            if state == 'open':
+                response = 'closing'
+                trigger = True
+            else:
+                response = 'already closed'
+	elif received == 'home' or received == 'set to home':
+            cfg.HOMEAWAY = 'home'
+            response = 'set to home'
+        elif received == 'away' or received == 'set to away':
+            cfg.HOMEAWAY = 'away'
+            response = 'set to away'
+        elif received == 'state' or received == 'status':
+            response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
+	elif received.startswith('firebase:'):
+	    cfg.FIREBASE_ID = received.replace('firebase:','')
+
+        conn.send_bytes(response)
+        print 'received ' + received + '. ' + response
+
+        if trigger:
+            GPIO.output(26, GPIO.LOW)
+            print 'Door triggered'
+	    time.sleep(2)
+	    GPIO.output(26, GPIO.HIGH)
+
+        trigger = False
+        time.sleep(1)
+
+    conn.close()
+    listener.close()
 
 ##############################################################################
 # Main functionality
@@ -341,7 +373,8 @@ class PiGarageAlert(object):
             # Create alert sending objects
             alert_senders = {
                 "Email": Email(),
-                "IFTTT": IFTTT()
+                "IFTTT": IFTTT(),
+		"Firebase": Firebase()
             }
 
             # Read initial states
