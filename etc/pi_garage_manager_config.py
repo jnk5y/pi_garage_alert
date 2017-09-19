@@ -22,6 +22,13 @@ ALERTS = [
         'start': 0,
         'end': 23,
         'recipients': [ 'ifttt:garage_event' ]
+    },
+    {
+        'state': 'open',
+        'time': 1,
+        'start': 0,
+        'end': 23,
+        'recipients': [ 'firebase' ]
     }
 ]
 
@@ -64,7 +71,7 @@ IFTTT_KEY = ''
 # Store Firebase notification information for mobile app notifications
 ##############################################################################
 
-FIREBASE_KEY = ''
+FIREBASE_KEY = 'key='
 FIREBASE_ID = ''
 
 ##############################################################################
