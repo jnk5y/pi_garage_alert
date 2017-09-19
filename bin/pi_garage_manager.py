@@ -149,7 +149,7 @@ def get_uptime():
     return uptime_string
 
 ##############################################################################
-# Trigger garage door to open or close
+# Listener thread for get or setting state
 ##############################################################################
 
 def doorTriggerLoop():
@@ -268,6 +268,9 @@ def format_duration(duration_sec):
 
     return ret
 
+##############################################################################
+# Signal handling
+##############################################################################
 def handler(signum = None, frame = None):
     print 'Signal handler called with signal', signum
     GPIO.cleanup()
