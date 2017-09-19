@@ -133,7 +133,7 @@ class Firebase(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def send_trigger(self, event, value1, value2, value3):
+    def send_trigger(self, value1, value2, value3):
         """Send a Firebase event using the FCM.
 
         Get the key by following the URL at https://console.firebase.google.com/
@@ -142,10 +142,14 @@ class Firebase(object):
             event: Event name
             value1, value2, value3: Optional data to supply to Firebase.
         """
-        self.logger.info("Sending Firebase event \"%s\": value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", event, value1, value2, value3)
-
-        headers = {'Content-type': 'application/json', 'Authorization': 'key=AAAAPWZAUno:APA91bFAO4qytE_9nJLgjN9yTnnmW0tSQxRflZI_D7vVxVR6kOHMsV4xAPgY7nuXeAXG9PabqfB-GbgWc4J8pm7inObVX91NeJ-QGsV90o-YfL3vmvXl63-sV2AeCHngrYbAGXr2t-tk'}
-        payload = '{ "notification": { "title": "this is the title", "body": "this is the body" }, "to": "dsM1GByRyUg:APA91bH9pAdF0awyeEB-95Q96MimYkR3ATI4_qRBNPwWb8L1ygfNxNszYpJjeQ91_KcIDgvl-ZwZAzxDgrSxxFfG5VkoWRRcg51TMr25CyZqB86IkXmilS6otVjfQntM5t3Wyn_Xiloi" }'
+        self.logger.info("Sending Firebase event": value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
+	
+	time = format_duration(value3)
+	body = "\"Your " + value1 + " has been " + value2 + " for " + time + "\""
+	firebase_key = "\"" + cfg.FIREBASE_KEY + "\""
+	firebase_id = "\"" + cfg.FIREBASE_ID + "\""
+        headers = {'Content-type': 'application/json', 'Authorization': firebase_key }
+        payload = { "notification": { "title": "Garage door alert", "body": body } , "to": firebase_id }
         try:
             requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, data=json.dumps(payload))
         except:
@@ -169,8 +173,8 @@ def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_
             alert_senders['Email'].send_email(recipient[6:], subject, msg)
         elif recipient[:6] == 'ifttt:':
             alert_senders['IFTTT'].send_trigger(recipient[6:], subject, state, '%d' % (time_in_state))
-	elif recipient[] == 'firebase':
-            alert_senders['Firebase'].send_trigger('Garage', subject, state, '%d' % (time_in_state))
+	elif recipient == 'firebase':
+            alert_senders['Firebase'].send_trigger(subject, state, '%d' % (time_in_state))
         else:
             logger.error("Unrecognized recipient type: %s", recipient)
 
