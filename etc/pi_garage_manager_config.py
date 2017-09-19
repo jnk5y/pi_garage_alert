@@ -61,6 +61,13 @@ EMAIL_PRIORITY = '1'
 IFTTT_KEY = ''
 
 ##############################################################################
+# Store Firebase notification information for mobile app notifications
+##############################################################################
+
+FIREBASE_KEY = ''
+FIREBASE_ID = ''
+
+##############################################################################
 # use ifconfig to find your ip address or use localhost
 ##############################################################################
 NETWORK_IP = 'localhost'
