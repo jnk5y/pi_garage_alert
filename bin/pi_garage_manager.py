@@ -41,6 +41,7 @@ from datetime import datetime
 import subprocess
 import re
 import sys
+import signal
 import json
 import logging
 from datetime import timedelta
@@ -267,6 +268,14 @@ def format_duration(duration_sec):
 
     return ret
 
+def handler(signum = None, frame = None):
+    print 'Signal handler called with signal', signum
+    GPIO.cleanup()
+    print 'Exiting pi_garage_manager.py'
+    sys.exit(0)
+
+for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+    signal.signal(sig, handler)
 
 ##############################################################################
 # Main functionality
@@ -387,13 +396,8 @@ class PiGarageAlert(object):
 
                 # Poll every 1 second
                 time.sleep(1)
-        except KeyboardInterrupt:
-            logging.critical("Terminating due to keyboard interrupt")
         except:
-            logging.critical("Terminating due to unexpected error: %s", sys.exc_info()[0])
-            logging.critical("%s", traceback.format_exc())
-
-        GPIO.cleanup()
+            logging.critical("Terminating process")
 
 if __name__ == "__main__":
     PiGarageAlert().main()
