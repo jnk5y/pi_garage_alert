@@ -136,7 +136,7 @@ class Firebase(object):
     def send_trigger(self, value1, value2, value3):
         """Send a Firebase event using the FCM.
 
-        Get the key by following the URL at https://console.firebase.google.com/
+        Get the server key by following the URL at https://console.firebase.google.com/
 
         Args:
             event: Event name
@@ -144,14 +144,14 @@ class Firebase(object):
         """
         self.logger.info("Sending Firebase event": value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
 	
-	time = format_duration(value3)
-	body = "\"Your " + value1 + " has been " + value2 + " for " + time + "\""
-	firebase_key = "\"" + cfg.FIREBASE_KEY + "\""
-	firebase_id = "\"" + cfg.FIREBASE_ID + "\""
-        headers = {'Content-type': 'application/json', 'Authorization': firebase_key }
-        payload = { "notification": { "title": "Garage door alert", "body": body } , "to": firebase_id }
+	time = format_duration(int(value3))
+	body = "Your " + value1 + " has been " + value2 + " for " + time
+	
+        headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
+        payload = { "notification": { "title": "Garage door alert", "body": body } , "to": cfg.FIREBASE_ID }
+	
         try:
-            requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, data=json.dumps(payload))
+            requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
         except:
             self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
 
@@ -268,7 +268,8 @@ def doorTriggerLoop():
 
     while True:
         conn = listener.accept()
-        received = conn.recv_bytes().lower()
+        received_raw = conn.recv_bytes()
+	received = received_raw.lower()
         response = 'unknown command'
         trigger = False
 
@@ -299,7 +300,7 @@ def doorTriggerLoop():
         elif received == 'state' or received == 'status':
             response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
 	elif received.startswith('firebase:'):
-	    cfg.FIREBASE_ID = received.replace('firebase:','')
+	    cfg.FIREBASE_ID = received_raw.replace('firebase:','')
 
         conn.send_bytes(response)
         print 'received ' + received + '. ' + response
