@@ -142,7 +142,7 @@ class Firebase(object):
             event: Event name
             value1, value2, value3: Optional data to supply to Firebase.
         """
-        self.logger.info("Sending Firebase event": value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
+        self.logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
 	
 	time = format_duration(int(value3))
 	body = "Your " + value1 + " has been " + value2 + " for " + time
