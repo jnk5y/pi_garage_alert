@@ -303,7 +303,7 @@ def doorTriggerLoop():
 	    cfg.FIREBASE_ID = received_raw.replace('firebase:','')
 
         conn.send_bytes(response)
-        print 'received ' + received + '. ' + response
+        print 'received ' + received_raw + '. ' + response
 
         if trigger:
             GPIO.output(26, GPIO.LOW)
