@@ -144,7 +144,7 @@ class Firebase(object):
         """
         self.logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
 	
-	if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY = '':
+	if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
 		self.logger.error("Firebase ID or KEY is empty")
 	else:		
 		time = format_duration(int(value3))
@@ -180,7 +180,7 @@ def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_
             alert_senders['Email'].send_email(recipient[6:], subject, msg)
         elif recipient[:6] == 'ifttt:':
             alert_senders['IFTTT'].send_trigger(recipient[6:], subject, state, '%d' % (time_in_state))
-		elif recipient[:9] == 'firebase:':
+	elif recipient[:9] == 'firebase:':
             alert_senders['Firebase'].send_trigger(recipient[9:], state, '%d' % (time_in_state))
         else:
             logger.error("Unrecognized recipient type: %s", recipient)
@@ -276,7 +276,7 @@ def doorTriggerLoop():
     while True:
         conn = listener.accept()
         received_raw = conn.recv_bytes()
-		received = received_raw.lower()
+	received = received_raw.lower()
         response = 'unknown command'
         trigger = False
 
@@ -298,16 +298,16 @@ def doorTriggerLoop():
                 trigger = True
             else:
                 response = 'already closed'
-		elif received == 'home' or received == 'set to home':
-			cfg.HOMEAWAY = 'home'
-			response = 'set to home'
+	elif received == 'home' or received == 'set to home':
+	    cfg.HOMEAWAY = 'home'
+	    response = 'set to home'
         elif received == 'away' or received == 'set to away':
             cfg.HOMEAWAY = 'away'
             response = 'set to away'
         elif received == 'state' or received == 'status':
             response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-		elif received.startswith('firebase:'):
-	    	cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+	elif received.startswith('firebase:'):
+	    cfg.FIREBASE_ID = received_raw.replace('firebase:','')
 
         conn.send_bytes(response)
         print 'received ' + received_raw + '. ' + response
