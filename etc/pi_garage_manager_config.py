@@ -29,7 +29,7 @@ ALERTS = [
         'start': 0,
         'end': 23,
         'recipients': [ 'firebase:data' ]
-    }
+    },
     {
         'state': 'closed',
         'time': 1,
