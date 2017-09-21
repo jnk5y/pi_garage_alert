@@ -157,10 +157,10 @@ class Firebase(object):
 		else:
 			payload = { "data": { "event": value2 } , "to": cfg.FIREBASE_ID }
 	
-        try:
-            requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
-        except:
-            self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
+		try:
+		    requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
+		except:
+		    self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
 
 ##############################################################################
 # Logging and alerts
