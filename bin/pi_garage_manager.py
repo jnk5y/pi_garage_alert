@@ -153,9 +153,9 @@ class Firebase(object):
 		payload = ''
 		
 		if value1 == 'notification':
-			payload = { "notification": { "title": "Garage door alert", "body": body } , "to": cfg.FIREBASE_ID }
+		    payload = { "notification": { "title": "Garage door alert", "body": body } , "to": cfg.FIREBASE_ID }
 		else:
-			payload = { "data": { "event": value2 } , "to": cfg.FIREBASE_ID }
+		    payload = { "data": { "event": value2 } , "to": cfg.FIREBASE_ID }
 	
 		try:
 		    requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
