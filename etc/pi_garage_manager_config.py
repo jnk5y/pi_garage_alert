@@ -28,14 +28,14 @@ ALERTS = [
         'time': 1,
         'start': 0,
         'end': 23,
-        'recipients': [ 'firebase:data' ]
+        'recipients': [ 'firebase:app' ]
     },
     {
         'state': 'closed',
         'time': 1,
         'start': 0,
         'end': 23,
-        'recipients': [ 'firebase:data' ]
+        'recipients': [ 'firebase:app' ]
     }
 ]
 
