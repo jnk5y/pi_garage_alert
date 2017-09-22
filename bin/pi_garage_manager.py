@@ -38,13 +38,13 @@ Learn more at http://www.richlynch.com/code/pi_garage_alert
 import time
 from time import strftime
 from datetime import datetime
+from datetime import timedelta
 import subprocess
 import re
 import sys
 import signal
 import json
 import logging
-from datetime import timedelta
 import smtplib
 import ssl
 import traceback
@@ -52,7 +52,6 @@ from email.mime.text import MIMEText
 import socket
 from multiprocessing.connection import Listener
 import multiprocessing
-import threading
 import requests
 import httplib2
 import RPi.GPIO as GPIO
@@ -143,20 +142,20 @@ class Firebase(object):
             value1, value2, value3: Optional data to supply to Firebase.
         """
         self.logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
-	
+
 	if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
 		self.logger.error("Firebase ID or KEY is empty")
-	else:		
-		time = format_duration(int(value3))
+	else:
+	        time = format_duration(int(value3))
 		body = "Your garage door has been " + value2 + " for " + time
 		headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
 		payload = ''
-		
+
 		if value1 == 'notification':
 		    payload = { "notification": { "title": "Garage door alert", "body": body } , "to": cfg.FIREBASE_ID }
 		else:
 		    payload = { "data": { "event": value2 } , "to": cfg.FIREBASE_ID }
-	
+
 		try:
 		    requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
 		except:
@@ -265,64 +264,6 @@ def get_uptime():
         uptime_string = str(timedelta(seconds=uptime_seconds))
     return uptime_string
 
-##############################################################################
-# Listener thread for getting and setting state
-##############################################################################
-
-def doorTriggerLoop():
-    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
-    listener = Listener(address)
-
-    while True:
-        conn = listener.accept()
-        received_raw = conn.recv_bytes()
-	received = received_raw.lower()
-        response = 'unknown command'
-        trigger = False
-
-        if received == 'trigger':
-            trigger = True
-            if state == 'open':
-                response = 'closing'
-            else:
-                response = 'opening'
-        elif received == 'open' or received == 'up':
-            if state == 'open':
-                response = 'already open'
-            else:
-                response = 'opening'
-                trigger = True
-        elif received == 'close' or received == 'down':
-            if state == 'open':
-                response = 'closing'
-                trigger = True
-            else:
-                response = 'already closed'
-	elif received == 'home' or received == 'set to home':
-	    cfg.HOMEAWAY = 'home'
-	    response = 'set to home'
-        elif received == 'away' or received == 'set to away':
-            cfg.HOMEAWAY = 'away'
-            response = 'set to away'
-        elif received == 'state' or received == 'status':
-            response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-	elif received.startswith('firebase:'):
-	    cfg.FIREBASE_ID = received_raw.replace('firebase:','')
-
-        conn.send_bytes(response)
-        print 'received ' + received_raw + '. ' + response
-
-        if trigger:
-            GPIO.output(26, GPIO.LOW)
-            print 'Door triggered'
-	    time.sleep(2)
-	    GPIO.output(26, GPIO.HIGH)
-
-        trigger = False
-        time.sleep(1)
-
-    conn.close()
-    listener.close()
 
 ##############################################################################
 # Main functionality
@@ -355,52 +296,37 @@ class PiGarageAlert(object):
 
             # Use Raspberry Pi board pin numbers
             GPIO.setmode(GPIO.BOARD)
-            # Configure the sensor pins as inputs with pull up resistors
+            # Configure the sensor pin as input
             self.logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
             GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
- 
-	    # Configure the sensor pin for the relay to open and close the garage door
+	    # Configure the control pin for the relay to open and close the garage door
             GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
 
-            # Start garage door trigger listening thread
-            self.logger.info("Listening for commands")
-            doorTriggerThread = threading.Thread(target=doorTriggerLoop)
-            doorTriggerThread.setDaemon(True)
-            doorTriggerThread.start()
-
-            self.logger.info("Configuring global settings")
-
-            # Setting default home/away setting
-            cfg.HOMEAWAY = 'home'
-
-            # Last state of each garage door
+            # Configure global settings
             door_state = ''
-
-            # time.time() of the last time the garage door changed state
             time_of_last_state_change = ''
-
-            # Index of the next alert to send for each garage door
-            alert_state = ''
 
             # Create alert sending objects
             alert_senders = {
                 "Email": Email(),
                 "IFTTT": IFTTT(),
-				"Firebase": Firebase()
+		"Firebase": Firebase()
             }
 
             # Read initial states
             name = cfg.NAME
             state = get_garage_door_state()
-
             door_state = state
             time_of_last_state_change = time.time()
             alert_state = 0
 
             self.logger.info("Initial state of \"%s\" is %s", name, state)
 
+            # Prepare socket to listen for commands
+            address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
+            listener = Listener(address)
+
             while True:
-                name = cfg.NAME
                 state = get_garage_door_state()
                 time_in_state = time.time() - time_of_last_state_change
 
@@ -412,7 +338,6 @@ class PiGarageAlert(object):
 
                     # Reset alert when door changes state
                     alert_state = 0
-
                     # Reset time_in_state
                     time_in_state = 0
 
@@ -442,9 +367,59 @@ class PiGarageAlert(object):
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state, time_in_state)
                             alert_state += 1
 
+                # Receive incomming communications and set defaults
+                conn = listener.accept()
+                received_raw = ''
+                received_raw = conn.recv_bytes()
+
+                if(received_raw != ''):
+                    received = received_raw.lower()
+                    response = 'unknown command'
+                    trigger = False
+
+                    if received == 'trigger':
+                        trigger = True
+                        if state == 'open':
+                            response = 'closing'
+                        else:
+                            response = 'opening'
+                    elif received == 'open' or received == 'up':
+                        if state == 'open':
+                            response = 'already open'
+                        else:
+                            response = 'opening'
+                            trigger = True
+                    elif received == 'close' or received == 'down':
+                        if state == 'open':
+                            response = 'closing'
+                            trigger = True
+                    	else:
+                            response = 'already closed'
+                    elif received == 'home' or received == 'set to home':
+                        cfg.HOMEAWAY = 'home'
+            	        response = 'set to home'
+                    elif received == 'away' or received == 'set to away':
+                        cfg.HOMEAWAY = 'away'
+                        response = 'set to away'
+                    elif received == 'state' or received == 'status':
+                        response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
+		    elif received.startswith('firebase:'):
+                	cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+
+                    conn.send_bytes(response)
+                    self.logger.info('received ' + received_raw + '. ' + response)
+
+                    if trigger:
+                        GPIO.output(26, GPIO.LOW)
+                        print 'Door triggered'
+                	time.sleep(2)
+                	GPIO.output(26, GPIO.HIGH)
+
                 # Poll every 1 second
                 time.sleep(1)
         except:
+            conn.close()
+            listener.close()
             logging.critical("Terminating process")
 
 if __name__ == "__main__":
