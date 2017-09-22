@@ -14,10 +14,3 @@ else:
     print conn.recv_bytes()
     conn.close()
 
-    #sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #sock.connect(("192.168.86.9", 6000))
-    #sock.sendall(sys.argv[1])
-    #result = sock.recv(1024)
-    #print result
-    #sock.close()
-
