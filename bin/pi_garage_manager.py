@@ -228,18 +228,6 @@ def format_duration(duration_sec):
     return ret
 
 ##############################################################################
-# Signal handling
-##############################################################################
-def handler(signum = None, frame = None):
-    print 'Signal handler called with signal', signum
-    GPIO.cleanup()
-    print 'Exiting pi_garage_manager.py'
-    sys.exit(0)
-
-for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-    signal.signal(sig, handler)
-
-##############################################################################
 # Garage Door Sensor support
 ##############################################################################
 
@@ -417,10 +405,14 @@ class PiGarageAlert(object):
 
                 # Poll every 1 second
                 time.sleep(1)
+	    conn.close()
+            listener.close()	
         except:
-            conn.close()
-            listener.close()
             logging.critical("Terminating process")
+	finally:
+	    GPIO.cleanup()
+    	    print 'Exiting pi_garage_manager.py'
+    	    sys.exit(0)
 
 if __name__ == "__main__":
     PiGarageAlert().main()
