@@ -156,7 +156,7 @@ class Firebase(object):
 		payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
 	    elif value1 == 'notification':
 		payload = { "notification": { "title": "Garage door alert", "body": body }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-	    else
+	    else:
 		payload = { "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
 		
 	    try:
