@@ -147,11 +147,16 @@ class Firebase(object):
 	if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
 	    self.logger.error("Firebase ID or KEY is empty")
 	else:
-	    time = format_duration(int(value2))
-	    body = "Your garage door has been " + value1 + " for " + time
+	    time = format_duration(int(value3))
+	    body = "Your garage door has been " + value2 + " for " + time
 	    headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
-            payload = { "notification": { "title": "Garage door alert", "text": body }, "data": { "event": value1 }, "to": cfg.FIREBASE_ID }
-
+            payload = ''
+	    
+	    if value1 == 'notification':
+		payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
+	    else:
+		payload = { "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
+	    
 	    try:
 	        requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
 	    except:
@@ -176,7 +181,7 @@ def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_
         elif recipient[:6] == 'ifttt:':
             alert_senders['IFTTT'].send_trigger(recipient[6:], subject, state, '%d' % (time_in_state))
 	elif recipient[:9] == 'firebase:':
-            alert_senders['Firebase'].send_trigger(state, '%d' % (time_in_state))
+            alert_senders['Firebase'].send_trigger(recipient[9:], state, '%d' % (time_in_state))
         else:
             logger.error("Unrecognized recipient type: %s", recipient)
 
