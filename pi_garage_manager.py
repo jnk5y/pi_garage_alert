@@ -52,6 +52,7 @@ from email.mime.text import MIMEText
 import socket
 from multiprocessing.connection import Listener
 import multiprocessing
+import threading
 import requests
 import httplib2
 import RPi.GPIO as GPIO
@@ -152,7 +153,7 @@ class Firebase(object):
 		payload = ''
 
 		if value1 == 'notification':
-		    payload = { "notification": { "title": "Garage door alert", "body": body } , "to": cfg.FIREBASE_ID }
+                    payload = { "notification": { "title": "Garage door alert", "text": body }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
 		else:
 		    payload = { "data": { "event": value2 } , "to": cfg.FIREBASE_ID }
 
@@ -252,6 +253,67 @@ def get_uptime():
         uptime_string = str(timedelta(seconds=uptime_seconds))
     return uptime_string
 
+##############################################################################
+# Listener thread for getting/setting state and openning/closing the garage
+##############################################################################
+
+def doorTriggerLoop():
+    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
+    listener = Listener(address)	    
+
+    while True:
+        # Receive incomming communications and set defaults
+	conn = listener.accept()
+	received_raw = ''
+	received_raw = conn.recv_bytes()
+
+	received = received_raw.lower()
+	response = 'unknown command'
+	trigger = False
+
+        if received == 'trigger':
+            trigger = True
+            if state == 'open':
+                response = 'closing'
+            else:
+                response = 'opening'
+        elif received == 'open' or received == 'up':
+            if state == 'open':
+                response = 'already open'
+            else:
+                response = 'opening'
+                trigger = True
+        elif received == 'close' or received == 'down':
+            if state == 'open':
+                response = 'closing'
+                trigger = True
+            else:
+                response = 'already closed'
+	elif received == 'home' or received == 'set to home':
+	    cfg.HOMEAWAY = 'home'
+	    response = 'set to home'
+        elif received == 'away' or received == 'set to away':
+            cfg.HOMEAWAY = 'away'
+            response = 'set to away'
+        elif received == 'state' or received == 'status':
+            response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
+	elif received.startswith('firebase:'):
+	    cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+            response = 'ok'
+
+        conn.send_bytes(response)
+	#self.logger.info('received ' + received_raw + '. ' + response)
+
+        if trigger:
+            GPIO.output(26, GPIO.LOW)
+	    time.sleep(2)
+	    GPIO.output(26, GPIO.HIGH)
+
+        trigger = False
+        time.sleep(1)
+
+    conn.close()
+    listener.close()
 
 ##############################################################################
 # Main functionality
@@ -289,6 +351,12 @@ class PiGarageAlert(object):
             GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 	    # Configure the control pin for the relay to open and close the garage door
             GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
+		
+	    # Start garage door trigger listening thread
+            self.logger.info("Listening for commands")
+            doorTriggerThread = threading.Thread(target=doorTriggerLoop)
+            doorTriggerThread.setDaemon(True)
+            doorTriggerThread.start()
 
             # Configure global settings
             door_state = ''
@@ -354,59 +422,7 @@ class PiGarageAlert(object):
                         if send_alert:
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state, time_in_state)
                             alert_state += 1
-
-                # Receive incomming communications and set defaults
-                conn = listener.accept()
-                received_raw = ''
-                received_raw = conn.recv_bytes()
-
-                if(received_raw != ''):
-                    received = received_raw.lower()
-                    response = 'unknown command'
-                    trigger = False
-
-                    if received == 'trigger':
-                        trigger = True
-                        if state == 'open':
-                            response = 'closing'
-                        else:
-                            response = 'opening'
-                    elif received == 'open' or received == 'up':
-                        if state == 'open':
-                            response = 'already open'
-                        else:
-                            response = 'opening'
-                            trigger = True
-                    elif received == 'close' or received == 'down':
-                        if state == 'open':
-                            response = 'closing'
-                            trigger = True
-                    	else:
-                            response = 'already closed'
-                    elif received == 'home' or received == 'set to home':
-                        cfg.HOMEAWAY = 'home'
-            	        response = 'set to home'
-                    elif received == 'away' or received == 'set to away':
-                        cfg.HOMEAWAY = 'away'
-                        response = 'set to away'
-                    elif received == 'state' or received == 'status':
-                        response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-		    elif received.startswith('firebase:'):
-                	cfg.FIREBASE_ID = received_raw.replace('firebase:','')
-
-                    conn.send_bytes(response)
-                    self.logger.info('received ' + received_raw + '. ' + response)
-
-                    if trigger:
-                        GPIO.output(26, GPIO.LOW)
-                        print 'Door triggered'
-                	time.sleep(2)
-                	GPIO.output(26, GPIO.HIGH)
-
-                # Poll every 1 second
-                time.sleep(1)
-	    conn.close()
-            listener.close()	
+				
         except:
             logging.critical("Terminating process")
 	finally:
