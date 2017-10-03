@@ -378,10 +378,6 @@ class PiGarageAlert(object):
 
             self.logger.info("Initial state of \"%s\" is %s", name, state)
 
-            # Prepare socket to listen for commands
-            address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
-            listener = Listener(address)
-
             while True:
                 state = get_garage_door_state()
                 time_in_state = time.time() - time_of_last_state_change
