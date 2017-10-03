@@ -152,11 +152,13 @@ class Firebase(object):
 	    headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
             payload = ''
 	    
-	    if value1 == 'notification':
+	    if value1 == 'sound':
 		payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-	    else:
+	    else if value1 == 'notification':
+		payload = { "notification": { "title": "Garage door alert", "body": body }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
+	    else
 		payload = { "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-	    
+		
 	    try:
 	        requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
 	    except:
@@ -302,7 +304,7 @@ def doorTriggerLoop():
             response = 'ok'
 
         conn.send_bytes(response)
-	#self.logger.info('received ' + received_raw + '. ' + response)
+	print 'received ' + received_raw + '. ' + response
 
         if trigger:
             GPIO.output(26, GPIO.LOW)
@@ -423,7 +425,7 @@ class PiGarageAlert(object):
             logging.critical("Terminating process")
 	finally:
 	    GPIO.cleanup()
-    	    print 'Exiting pi_garage_manager.py'
+	    self.logger.error("Exiting pi_garage_manager.py: %s", sys.exc_info()[0])
     	    sys.exit(0)
 
 if __name__ == "__main__":
