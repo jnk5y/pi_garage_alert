@@ -62,7 +62,7 @@ import pi_garage_manager_config as cfg
 # FIREBASE support https://firebase.google.com/docs/cloud-messaging/
 ##############################################################################
 
-def send_notification(logger, name, state, time_in_state, alert_type):
+def send_notification(logger, name, state, time_in_state, alert_type, firebase_id):
 
     """ 
         Send a Firebase event using the FCM.
@@ -70,8 +70,10 @@ def send_notification(logger, name, state, time_in_state, alert_type):
     """
     logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", name, state, time_in_state )
 
-    if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
-        logger.error("Firebase ID or KEY is empty")
+    if firebase_id == '':
+        logger.error("Firebase id is empty")
+    elif cfg.FIREBASE_KEY == '':
+        logger.error("Firebase key is empty in config file")
     else:
         time = format_duration(int(time_in_state))
         body = "Your garage door has been " + state + " for " + time
@@ -79,9 +81,9 @@ def send_notification(logger, name, state, time_in_state, alert_type):
         payload = ''
 
         if alert_type == 'alert':
-            payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": state }, "to": cfg.FIREBASE_ID }
+            payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": state }, "to": firebase_id }
         else:
-            payload = { "data": { "event": state }, "to": cfg.FIREBASE_ID }
+            payload = { "data": { "event": state }, "to": firebase_id }
 		
         try:
             requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
@@ -199,13 +201,13 @@ try:
         logging.basicConfig(format=log_fmt, level=log_level, filename=cfg.LOG_FILENAME)
 
     # Banner
-    self.logger.info("==========================================================")
-    self.logger.info("Pi Garage Manager Starting")
+    logger.info("==========================================================")
+    logger.info("Pi Garage Manager Starting")
 
     # Use Raspberry Pi board pin numbers
     GPIO.setmode(GPIO.BOARD)
     # Configure the sensor pin as input
-    self.logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
+    logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
     GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     # Configure the control pin for the relay to open and close the garage door
     GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
@@ -213,6 +215,7 @@ try:
     # Configure global settings
     door_state = ''
     time_of_last_state_change = ''
+    firebase_id = ''
 
     # Read initial states
     name = cfg.NAME
@@ -222,10 +225,10 @@ try:
     time_of_last_state_change = time.time()
     alert_state = False
 
-    self.logger.info("Initial state of \"%s\" is %s", name, state)
+    logger.info("Initial state of \"%s\" is %s", name, state)
 
     # Start garage door trigger listening thread
-    self.logger.info("Listening for commands")
+    logger.info("Listening for commands")
     messageListenerThread = threading.Thread(target=message_listener)
     messageListenerThread.setDaemon(True)
     messageListenerThread.start()
@@ -239,8 +242,8 @@ try:
             door_state = state
             time_of_last_state_change = time.time()
 
-            send_notification(self.logger, name, state, time_in_state, 'data')
-            self.logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
+            send_notification(logger, name, state, time_in_state, 'data', firebase_id)
+            logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
 
             # Reset time_in_state and alert_state
             time_in_state = 0
@@ -265,12 +268,12 @@ try:
                         send_alert = True
 
                 if send_alert:
-                    send_notification(self.logger, name, state, time_in_state, 'alert')
+                    send_notification(logger, name, state, time_in_state, 'alert', firebase_id)
                     alert_state = True
 
         # If system is set to away and the door is a open send an alert
         if home_away == 'away' and state == 'open' and not alert_state:
-            send_notification(self.logger, name, state, time_in_state, 'alert')
+            send_notification(logger, name, state, time_in_state, 'alert', firebase_id)
             alert_state = True
 
         # Deal with received messages
@@ -307,13 +310,13 @@ try:
             elif received == 'state' or received == 'status':
                 response = state + ' and ' + home_away
             elif received.startswith('firebase:'):
-                cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+                firebase_id = received_raw.replace('firebase:','')
                 response = 'ok'
 
             listeningQueue.task_done()
             responseQueue.put(response)
             responseQueue.join()
-            self.logger.info('Received %s. Responded with %s', received_raw, response )
+            logger.info('Received %s. Responded with %s', received_raw, response )
 
             if trigger:
                 GPIO.output(26, GPIO.LOW)
@@ -328,6 +331,6 @@ except:
     logging.critical("Terminating process")
 finally:
     GPIO.cleanup()
-    self.logger.error("Exiting pi_garage_manager.py")
-    self.logger.error(sys.exc_info())
+    logger.error("Exiting pi_garage_manager.py")
+    logger.error(sys.exc_info())
     sys.exit(0)
