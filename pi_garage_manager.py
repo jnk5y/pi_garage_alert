@@ -68,10 +68,10 @@ def send_notification(logger, name, state, time_in_state, alert_type):
         Send a Firebase event using the FCM.
         Get the server key by following the URL at https://console.firebase.google.com/
     """
-    self.logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", name, state, time_in_state )
+    logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", name, state, time_in_state )
 
     if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
-        self.logger.error("Firebase ID or KEY is empty")
+        logger.error("Firebase ID or KEY is empty")
     else:
         time = format_duration(int(time_in_state))
         body = "Your garage door has been " + state + " for " + time
@@ -86,7 +86,7 @@ def send_notification(logger, name, state, time_in_state, alert_type):
         try:
             requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
         except:
-            self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
+            logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
 
 ##############################################################################
 # Misc support
