@@ -13,13 +13,13 @@ ALERTS = [
         'state': 'open',
         'time': 300,
         'start': 23,
-        'end': 7,
+        'end': 7
     },
     {
         'state': 'open',
         'time': 7200,
         'start': 0,
-        'end': 23,
+        'end': 23
     }
 ]
 
