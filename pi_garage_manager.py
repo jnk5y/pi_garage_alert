@@ -58,6 +58,9 @@ import RPi.GPIO as GPIO
 sys.path.append('/usr/local/etc')
 import pi_garage_manager_config as cfg
 
+listeningQueue = Queue()
+responseQueue = Queue()
+
 ##############################################################################
 # FIREBASE support https://firebase.google.com/docs/cloud-messaging/
 ##############################################################################
@@ -160,16 +163,20 @@ def get_uptime():
 # Listener thread for getting/setting state and openning/closing the garage
 ##############################################################################
 
-def doorTriggerLoop():
+def messageListener():
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
     listener = Listener(address)
 
     while True:
-        # Receive incomming communications and set defaults
+        # Receive incomming communications
         conn = listener.accept()
         received_raw = ''
         received_raw = conn.recv_bytes()
-        q.put(received_raw)
+        listeningQueue.put(received_raw)
+        listeningQueue.join()
+        response = responseQueue.get()
+        conn.send_bytes(response)
+        responseQueue.task_done()
         time.sleep(1)
 
     conn.close()
@@ -218,71 +225,21 @@ class PiGarageAlert(object):
 
             # Read initial states
             name = cfg.NAME
-            cfg.HOMEAWAY = 'home'
+            home_away = 'home'
             state = get_garage_door_state()
             door_state = state
             time_of_last_state_change = time.time()
             alert_state = False
 
             self.logger.info("Initial state of \"%s\" is %s", name, state)
-
-            # Queue for sharing information from the new thread
-            q = Queue()
             
             # Start garage door trigger listening thread
             self.logger.info("Listening for commands")
-            doorTriggerThread = threading.Thread(target=doorTriggerLoop)
-            doorTriggerThread.setDaemon(True)
-            doorTriggerThread.start()
+            messageListenerThread = threading.Thread(target=messageListener)
+            messageListenerThread.setDaemon(True)
+            messageListenerThread.start()
 
             while True:
-                if not q.empty:
-                    received_raw = q.get()
-                    received = received_raw.lower()
-                    response = 'unknown command'
-                    trigger = False
-
-                    if received == 'trigger':
-                        trigger = True
-                        if state == 'open':
-                            response = 'closing'
-                        else:
-                            response = 'opening'
-                    elif received == 'open' or received == 'up':
-                        if state == 'open':
-                            response = 'already open'
-                        else:
-                            response = 'opening'
-                            trigger = True
-                    elif received == 'close' or received == 'down':
-                        if state == 'open':
-                            response = 'closing'
-                            trigger = True
-                        else:
-                            response = 'already closed'
-                    elif received == 'home' or received == 'set to home':
-                        cfg.HOMEAWAY = 'home'
-                        response = 'set to home'
-                    elif received == 'away' or received == 'set to away':
-                        cfg.HOMEAWAY = 'away'
-                        response = 'set to away'
-                    elif received == 'state' or received == 'status':
-                        response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-                    elif received.startswith('firebase:'):
-                        cfg.FIREBASE_ID = received_raw.replace('firebase:','')
-                        response = 'ok'
-
-                    conn.send_bytes(response)
-                    print 'received ' + received_raw + '. ' + response
-
-                    if trigger:
-                        GPIO.output(26, GPIO.LOW)
-                        time.sleep(2)
-                        GPIO.output(26, GPIO.HIGH)
-
-                    trigger = False
-                    q.task_done()
-                
                 state = get_garage_door_state()
                 time_in_state = time.time() - time_of_last_state_change
 
@@ -321,9 +278,58 @@ class PiGarageAlert(object):
                             alert_state = True
                             
                 # If system is set to away and the door is a open send an alert
-                if cfg.HOMEAWAY == 'away' and state == 'open' and not alert_state:
+                if home_away == 'away' and state == 'open' and not alert_state:
                     send_notification(self.logger, name, state, time_in_state, 'alert')
                     alert_state = True
+                
+                # Deal with received messages
+                if not listeningQueue.empty():
+                    received_raw = listeningQueue.get()
+                    received = received_raw.lower()
+                    response = 'unknown command'
+                    trigger = False
+
+                    if received == 'trigger':
+                        trigger = True
+                        if state == 'open':
+                            response = 'closing'
+                        else:
+                            response = 'opening'
+                    elif received == 'open' or received == 'up':
+                        if state == 'open':
+                            response = 'already open'
+                        else:
+                            response = 'opening'
+                            trigger = True
+                    elif received == 'close' or received == 'down':
+                        if state == 'open':
+                            response = 'closing'
+                            trigger = True
+                        else:
+                            response = 'already closed'
+                    elif received == 'home' or received == 'set to home':
+                        home_away = 'home'
+                        response = 'set to home'
+                    elif received == 'away' or received == 'set to away':
+                        home_away = 'away'
+                        response = 'set to away'
+                    elif received == 'state' or received == 'status':
+                        response = state + ' and ' + home_away
+                    elif received.startswith('firebase:'):
+                        cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+                        response = 'ok'
+
+                    listeningQueue.task_done()
+                    responseQueue.put(response)
+                    responseQueue.join()
+                    self.logger.info('Received %s. Responded with %s', received_raw, response )
+
+                    if trigger:
+                        GPIO.output(26, GPIO.LOW)
+                        time.sleep(2)
+                        GPIO.output(26, GPIO.HIGH)
+
+                    trigger = False
                     
                 time.sleep(1)
 				
