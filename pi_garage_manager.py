@@ -35,11 +35,6 @@ Learn more at http://www.richlynch.com/code/pi_garage_alert
 # DEALINGS IN THE SOFTWARE.
 #
 ##############################################################################
-
-import time
-from time import strftime
-from datetime import datetime
-from datetime import timedelta
 import re
 import sys
 import signal
@@ -47,6 +42,11 @@ import json
 import logging
 import traceback
 import socket
+import time
+from time import strftime
+from datetime import datetime
+from datetime import timedelta
+from Queue import Queue
 from multiprocessing.connection import Listener
 import multiprocessing
 import subprocess
@@ -269,11 +269,14 @@ class PiGarageAlert(object):
 
             self.logger.info("Initial state of \"%s\" is %s", name, state)
 
+            # Queue for sharing information from the new thread
+            q = Queue()
+            
             # Start garage door trigger listening thread
             self.logger.info("Listening for commands")
             doorTriggerThread = threading.Thread(target=doorTriggerLoop)
             doorTriggerThread.setDaemon(True)
-            doorTriggerThread.start()            
+            doorTriggerThread.start()
 
             while True:
                 state = get_garage_door_state()
