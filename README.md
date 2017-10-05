@@ -32,13 +32,9 @@ RUNNING PI_GARAGE_MANAGER
 * `sudo pip install requests`
 * `sudo pip install requests[security]`
 * `sudo pip install httplib2`
-* Optional email configuration
-	* Configure postfix to send mail using Google SMTP, or your ISP's SMTP server
-	* This guide shows how to setup Google SMTP - https://www.linode.com/docs/email/postfix/configure-postfix-to-send-mail-using-gmail-and-google-apps-on-debian-or-ubuntu
 * Edit the etc/pi_garage_manager_config.py file
 	* Modify the alert section to suit your alerting needs
-	* If you want an email alert add your email information setup from above
-	* if you want an IFTTT alert (notification or SMS) add your IFTTT key
+	* Add your firebase key
 * Run the install.sh script `sudo bash ./install.sh`
 	* The install script will copy bin/pi_garage_manager.py to /usr/local/sbin, etc/pi_garage_manager_config.py to /usr/local/etc, init.d/pi_garage_manager to /etc/init.d and make pi_garage_manager.py start on startup
 * To run the pi_garage_manager service run `sudo service pi_garage_manager start`
