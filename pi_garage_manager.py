@@ -169,50 +169,7 @@ def doorTriggerLoop():
         conn = listener.accept()
         received_raw = ''
         received_raw = conn.recv_bytes()
-
-        received = received_raw.lower()
-        response = 'unknown command'
-        trigger = False
-
-        if received == 'trigger':
-            trigger = True
-            if state == 'open':
-                response = 'closing'
-            else:
-                response = 'opening'
-        elif received == 'open' or received == 'up':
-            if state == 'open':
-                response = 'already open'
-            else:
-                response = 'opening'
-                trigger = True
-        elif received == 'close' or received == 'down':
-            if state == 'open':
-                response = 'closing'
-                trigger = True
-            else:
-                response = 'already closed'
-        elif received == 'home' or received == 'set to home':
-            cfg.HOMEAWAY = 'home'
-            response = 'set to home'
-        elif received == 'away' or received == 'set to away':
-            cfg.HOMEAWAY = 'away'
-            response = 'set to away'
-        elif received == 'state' or received == 'status':
-            response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-        elif received.startswith('firebase:'):
-            cfg.FIREBASE_ID = received_raw.replace('firebase:','')
-            response = 'ok'
-
-        conn.send_bytes(response)
-        print 'received ' + received_raw + '. ' + response
-
-        if trigger:
-            GPIO.output(26, GPIO.LOW)
-            time.sleep(2)
-            GPIO.output(26, GPIO.HIGH)
-
-        trigger = False
+        q.put(received_raw)
         time.sleep(1)
 
     conn.close()
@@ -279,6 +236,53 @@ class PiGarageAlert(object):
             doorTriggerThread.start()
 
             while True:
+                if not q.empty:
+                    received_raw = q.get()
+                    received = received_raw.lower()
+                    response = 'unknown command'
+                    trigger = False
+
+                    if received == 'trigger':
+                        trigger = True
+                        if state == 'open':
+                            response = 'closing'
+                        else:
+                            response = 'opening'
+                    elif received == 'open' or received == 'up':
+                        if state == 'open':
+                            response = 'already open'
+                        else:
+                            response = 'opening'
+                            trigger = True
+                    elif received == 'close' or received == 'down':
+                        if state == 'open':
+                            response = 'closing'
+                            trigger = True
+                        else:
+                            response = 'already closed'
+                    elif received == 'home' or received == 'set to home':
+                        cfg.HOMEAWAY = 'home'
+                        response = 'set to home'
+                    elif received == 'away' or received == 'set to away':
+                        cfg.HOMEAWAY = 'away'
+                        response = 'set to away'
+                    elif received == 'state' or received == 'status':
+                        response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
+                    elif received.startswith('firebase:'):
+                        cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+                        response = 'ok'
+
+                    conn.send_bytes(response)
+                    print 'received ' + received_raw + '. ' + response
+
+                    if trigger:
+                        GPIO.output(26, GPIO.LOW)
+                        time.sleep(2)
+                        GPIO.output(26, GPIO.HIGH)
+
+                    trigger = False
+                    q.task_done()
+                
                 state = get_garage_door_state()
                 time_in_state = time.time() - time_of_last_state_change
 
