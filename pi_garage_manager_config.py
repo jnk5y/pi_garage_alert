@@ -27,18 +27,10 @@ ALERTS = [
 LOG_FILENAME = "/var/log/pi_garage_manager.log"
 
 ##############################################################################
-# Home and away setting. Set it to away with the app when you are on vacation
-# to trigger an alert immediately if the garage door is open.
-# Default setting on startup is home
-##############################################################################
-HOMEAWAY = ''
-
-##############################################################################
 # Store Firebase notification information for mobile app notifications
-# Insert your firebase key here. ID will be sent by the mobile app
+# Insert your firebase key here.
 ##############################################################################
 FIREBASE_KEY = 'key='
-FIREBASE_ID = ''
 
 ##############################################################################
 # IP address that pi garage manager is running on
