@@ -184,18 +184,18 @@ def message_listener():
 listeningQueue = Queue()
 responseQueue = Queue()
 
+# Set up logging
+log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
+log_level = logging.INFO
+
+if sys.stdout.isatty():
+    # Connected to a real terminal - log to stdout
+    logging.basicConfig(format=log_fmt, level=log_level)
+else:
+    # Background mode - log to file
+    logging.basicConfig(format=log_fmt, level=log_level, filename=cfg.LOG_FILENAME)
+
 try:
-    # Set up logging
-    log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
-    log_level = logging.INFO
-
-    if sys.stdout.isatty():
-        # Connected to a real terminal - log to stdout
-        logging.basicConfig(format=log_fmt, level=log_level)
-    else:
-        # Background mode - log to file
-        logging.basicConfig(format=log_fmt, level=log_level, filename=cfg.LOG_FILENAME)
-
     # Banner
     logger.info("==========================================================")
     logger.info("Pi Garage Manager Starting")
