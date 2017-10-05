@@ -62,7 +62,7 @@ import pi_garage_manager_config as cfg
 # FIREBASE support https://firebase.google.com/docs/cloud-messaging/
 ##############################################################################
 
-def send_alert(logger, name, state, time_in_state, alert_type):
+def send_notification(logger, name, state, time_in_state, alert_type):
 
     """ 
         Send a Firebase event using the FCM.
@@ -287,7 +287,7 @@ class PiGarageAlert(object):
                     door_state = state
                     time_of_last_state_change = time.time()
 
-                    send_alert(self.logger, name, state, time_in_state, 'data')
+                    send_notification(self.logger, name, state, time_in_state, 'data')
                     self.logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
 
                     # Reset time_in_state and alert_state
@@ -313,12 +313,12 @@ class PiGarageAlert(object):
                                 send_alert = True
 
                         if send_alert:
-                            send_alert(self.logger, name, state, time_in_state, 'alert')
+                            send_notification(self.logger, name, state, time_in_state, 'alert')
                             alert_state = True
                             
                 # If system is set to away and the door is a open send an alert
                 if cfg.HOMEAWAY == 'away' and state == 'open' and not alert_state:
-                    send_alert(self.logger, name, state, time_in_state, 'alert')
+                    send_notification(self.logger, name, state, time_in_state, 'alert')
                     alert_state = True
                     
                 time.sleep(1)
