@@ -14,28 +14,28 @@ ALERTS = [
         'time': 300,
         'start': 23,
         'end': 7,
-        'recipients': [ 'ifttt:garage_event','firebase:sound' ]
+        'recipients': [ 'ifttt:garage_event','firebase:notification' ]
     },
     {
         'state': 'open',
         'time': 7200,
         'start': 0,
         'end': 23,
-        'recipients': [ 'ifttt:garage_event','firebase:sound' ]
+        'recipients': [ 'ifttt:garage_event','firebase:notification' ]
     },
     {
         'state': 'open',
         'time': 1,
         'start': 0,
         'end': 23,
-        'recipients': [ 'firebase:notification' ]
+        'recipients': [ 'firebase:data' ]
     },
     {
         'state': 'closed',
         'time': 1,
         'start': 0,
         'end': 23,
-        'recipients': [ 'firebase:notification' ]
+        'recipients': [ 'firebase:data' ]
     }
 ]
 
