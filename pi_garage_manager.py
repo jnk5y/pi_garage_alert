@@ -185,6 +185,7 @@ listeningQueue = Queue()
 responseQueue = Queue()
 
 # Set up logging
+logger = logging.getLogger('pi_garage_manager')
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log_level = logging.INFO
 
