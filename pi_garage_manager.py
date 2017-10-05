@@ -133,10 +133,6 @@ def format_duration(duration_sec):
 
     return ret
 
-##############################################################################
-# Garage Door Sensor support
-##############################################################################
-
 def get_garage_door_state():
     """Returns the state of the garage door on the specified pin as a string
 
