@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """ Pi Garage Manager
 
-Authors: Richard L. Lynch <rich@richlynch.com> and John Kyrus
+Authors: John Kyrus adapted from Richard L. Lynch <rich@richlynch.com>
 
-Description: Emails, tweets, or sends an SMS if a garage door is left open
-too long and allows you to open and close the door remotely.
+Description: Use the accompying cordova app along with my node-rest-invoker https://github.com/jnk5y/node-rest-invoker
+    to communicate with this garage door app. See state of garage door and open and close it from the app. Receive 
+    notifications on your phone through the app and googles notification service using firebase.
 
 Learn more at http://www.richlynch.com/code/pi_garage_alert
 """
@@ -39,19 +40,16 @@ import time
 from time import strftime
 from datetime import datetime
 from datetime import timedelta
-import subprocess
 import re
 import sys
 import signal
 import json
 import logging
-import smtplib
-import ssl
 import traceback
-from email.mime.text import MIMEText
 import socket
 from multiprocessing.connection import Listener
 import multiprocessing
+import subprocess
 import threading
 import requests
 import httplib2
@@ -61,129 +59,34 @@ sys.path.append('/usr/local/etc')
 import pi_garage_manager_config as cfg
 
 ##############################################################################
-# Email support
-##############################################################################
-
-class Email(object):
-    """Class to send emails"""
-
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-    def send_email(self, recipient, subject, msg):
-        """Sends an email to the specified email address.
-
-        Args:
-            recipient: Email address to send to.
-            subject: Email subject.
-            msg: Body of email to send.
-        """
-        self.logger.info("Sending email to %s: subject = \"%s\", message = \"%s\"", recipient, subject, msg)
-
-        msg = MIMEText(msg)
-        msg['Subject'] = subject
-        msg['To'] = recipient
-        msg['From'] = cfg.EMAIL_FROM
-        msg['X-Priority'] = cfg.EMAIL_PRIORITY
-
-        try:
-            mail = smtplib.SMTP(cfg.SMTP_SERVER, cfg.SMTP_PORT)
-            if cfg.SMTP_USER != '' and cfg.SMTP_PASS != '':
-                mail.login(cfg.SMTP_USER, cfg.SMTP_PASS)
-            mail.sendmail(cfg.EMAIL_FROM, recipient, msg.as_string())
-            mail.quit()
-        except:
-            self.logger.error("Exception sending email: %s", sys.exc_info()[0])
-
-##############################################################################
-# IFTTT support using Maker Channel (https://ifttt.com/maker)
-##############################################################################
-
-class IFTTT(object):
-    """Class to send IFTTT triggers using the Maker Channel"""
-
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-    def send_trigger(self, event, value1, value2, value3):
-        """Send an IFTTT event using the maker channel.
-
-        Get the key by following the URL at https://ifttt.com/services/maker/settings
-
-        Args:
-            event: Event name
-            value1, value2, value3: Optional data to supply to IFTTT.
-        """
-        self.logger.info("Sending IFTTT event \"%s\": value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", event, value1, value2, value3)
-
-        headers = {'Content-type': 'application/json'}
-        payload = {'value1': value1, 'value2': value2, 'value3': value3}
-        try:
-            requests.post("https://maker.ifttt.com/trigger/%s/with/key/%s" % (event, cfg.IFTTT_KEY), headers=headers, data=json.dumps(payload))
-        except:
-            self.logger.error("Exception sending IFTTT event: %s", sys.exc_info()[0])
-
-##############################################################################
 # FIREBASE support https://firebase.google.com/docs/cloud-messaging/
 ##############################################################################
 
-class Firebase(object):
-    """Class to send Firebase notification triggers using Google's FCM"""
+def send_alert(logger, name, state, time_in_state, alert_type):
 
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-    def send_trigger(self, value1, value2, value3):
-        """Send a Firebase event using the FCM.
-
+    """ 
+        Send a Firebase event using the FCM.
         Get the server key by following the URL at https://console.firebase.google.com/
-
-        Args:
-            event: Event name
-            value1, value2, value3: Optional data to supply to Firebase.
-        """
-        self.logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", value1, value2, value3)
-
-	if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
-	    self.logger.error("Firebase ID or KEY is empty")
-	else:
-	    time = format_duration(int(value3))
-	    body = "Your garage door has been " + value2 + " for " + time
-	    headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
-            payload = ''
-	    
-	    if value1 == 'notification':
-		payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-	    elif value1 == 'data':
-		payload = { "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-		
-	    try:
-	        requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
-	    except:
-	        self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
-
-##############################################################################
-# Logging and alerts
-##############################################################################
-
-def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_state):
-    """Send subject and msg to specified recipients
-
-    Args:
-        recipients: An array of strings of the form type:address
-        subject: Subject of the alert
-        msg: Body of the alert
-        state: The state of the door
     """
-    for recipient in recipients:
-        if recipient[:6] == 'email:':
-            alert_senders['Email'].send_email(recipient[6:], subject, msg)
-        elif recipient[:6] == 'ifttt:':
-            alert_senders['IFTTT'].send_trigger(recipient[6:], subject, state, '%d' % (time_in_state))
-	elif recipient[:9] == 'firebase:':
-            alert_senders['Firebase'].send_trigger(recipient[9:], state, '%d' % (time_in_state))
+    self.logger.info("Sending Firebase event: value1 = \"%s\", value2 = \"%s\", value3 = \"%s\"", name, state, time_in_state )
+
+    if cfg.FIREBASE_ID == '' or cfg.FIREBASE_KEY == '':
+        self.logger.error("Firebase ID or KEY is empty")
+    else:
+        time = format_duration(int(time_in_state))
+        body = "Your garage door has been " + state + " for " + time
+        headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
+        payload = ''
+
+        if alert_type == 'alert':
+            payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": state }, "to": cfg.FIREBASE_ID }
         else:
-            logger.error("Unrecognized recipient type: %s", recipient)
+            payload = { "data": { "event": state }, "to": cfg.FIREBASE_ID }
+		
+        try:
+            requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
+        except:
+            self.logger.error("Exception sending Firebase event: %s", sys.exc_info()[0])
 
 ##############################################################################
 # Misc support
@@ -259,17 +162,17 @@ def get_uptime():
 
 def doorTriggerLoop():
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
-    listener = Listener(address)	    
+    listener = Listener(address)
 
     while True:
         # Receive incomming communications and set defaults
-	conn = listener.accept()
-	received_raw = ''
-	received_raw = conn.recv_bytes()
+        conn = listener.accept()
+        received_raw = ''
+        received_raw = conn.recv_bytes()
 
-	received = received_raw.lower()
-	response = 'unknown command'
-	trigger = False
+        received = received_raw.lower()
+        response = 'unknown command'
+        trigger = False
 
         if received == 'trigger':
             trigger = True
@@ -289,25 +192,25 @@ def doorTriggerLoop():
                 trigger = True
             else:
                 response = 'already closed'
-	elif received == 'home' or received == 'set to home':
-	    cfg.HOMEAWAY = 'home'
-	    response = 'set to home'
+        elif received == 'home' or received == 'set to home':
+            cfg.HOMEAWAY = 'home'
+            response = 'set to home'
         elif received == 'away' or received == 'set to away':
             cfg.HOMEAWAY = 'away'
             response = 'set to away'
         elif received == 'state' or received == 'status':
             response = get_garage_door_state() + ' and ' + cfg.HOMEAWAY
-	elif received.startswith('firebase:'):
-	    cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+        elif received.startswith('firebase:'):
+            cfg.FIREBASE_ID = received_raw.replace('firebase:','')
             response = 'ok'
 
         conn.send_bytes(response)
-	print 'received ' + received_raw + '. ' + response
+        print 'received ' + received_raw + '. ' + response
 
         if trigger:
             GPIO.output(26, GPIO.LOW)
-	    time.sleep(2)
-	    GPIO.output(26, GPIO.HIGH)
+            time.sleep(2)
+            GPIO.output(26, GPIO.HIGH)
 
         trigger = False
         time.sleep(1)
@@ -349,34 +252,28 @@ class PiGarageAlert(object):
             # Configure the sensor pin as input
             self.logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
             GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-	    # Configure the control pin for the relay to open and close the garage door
+            # Configure the control pin for the relay to open and close the garage door
             GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
-		
-	    # Start garage door trigger listening thread
-            self.logger.info("Listening for commands")
-            doorTriggerThread = threading.Thread(target=doorTriggerLoop)
-            doorTriggerThread.setDaemon(True)
-            doorTriggerThread.start()
 
             # Configure global settings
             door_state = ''
             time_of_last_state_change = ''
 
-            # Create alert sending objects
-            alert_senders = {
-                "Email": Email(),
-                "IFTTT": IFTTT(),
-		"Firebase": Firebase()
-            }
-
             # Read initial states
             name = cfg.NAME
+            cfg.HOMEAWAY = 'home'
             state = get_garage_door_state()
             door_state = state
             time_of_last_state_change = time.time()
-            alert_state = 0
+            alert_state = False
 
             self.logger.info("Initial state of \"%s\" is %s", name, state)
+
+            # Start garage door trigger listening thread
+            self.logger.info("Listening for commands")
+            doorTriggerThread = threading.Thread(target=doorTriggerLoop)
+            doorTriggerThread.setDaemon(True)
+            doorTriggerThread.start()            
 
             while True:
                 state = get_garage_door_state()
@@ -386,45 +283,49 @@ class PiGarageAlert(object):
                 if door_state != state:
                     door_state = state
                     time_of_last_state_change = time.time()
+
+                    send_alert(self.logger, name, state, time_in_state, 'data')
                     self.logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
 
-                    # Reset alert when door changes state
-                    alert_state = 0
-                    # Reset time_in_state
+                    # Reset time_in_state and alert_state
                     time_in_state = 0
-
+                    alert_state = False
+    
                 # See if there are any alerts
                 for alert in cfg.ALERTS:
-
-                    if alert_state == 0:
+                    if not alert_state:
                         # Get start and end times and only alert if current time is in between
                         time_of_day = int(datetime.now().strftime("%H"))
                         start_time = alert['start']
                         end_time = alert['end']
                         send_alert = False
 
-                        # If system is set to away and the door is a open send an alert
-                        if cfg.HOMEAWAY == 'away' and state == 'open':
-                            send_alert = True
                         # Is start and end hours in the same day?
-                        elif start_time < end_time:
+                        if start_time < end_time:
                             # Is the current time within the start and end times and has the time elapsed and is this the state to trigger the alert?
                             if time_of_day >= start_time and time_of_day <= end_time and time_in_state > alert['time'] and state == alert['state']:
                                 send_alert = True
-                        elif start_time > end_time:
+                        else:
                             if (time_of_day >= start_time or time_of_day <= end_time) and time_in_state > alert['time'] and state == alert['state']:
                                 send_alert = True
 
                         if send_alert:
-                            send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state, time_in_state)
-                            alert_state += 1
+                            send_alert(self.logger, name, state, time_in_state, 'alert')
+                            alert_state = True
+                            
+                # If system is set to away and the door is a open send an alert
+                if cfg.HOMEAWAY == 'away' and state == 'open' and not alert_state:
+                    send_alert(self.logger, name, state, time_in_state, 'alert')
+                    alert_state = True
+                    
+                time.sleep(1)
 				
         except:
             logging.critical("Terminating process")
-	finally:
-	    GPIO.cleanup()
-	    self.logger.error("Exiting pi_garage_manager.py: %s", sys.exc_info()[0])
-    	    sys.exit(0)
+    finally:
+        GPIO.cleanup()
+        self.logger.error("Exiting pi_garage_manager.py: %s", sys.exc_info()[0])
+        sys.exit(0)
 
 if __name__ == "__main__":
     PiGarageAlert().main()
