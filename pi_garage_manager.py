@@ -58,9 +58,6 @@ import RPi.GPIO as GPIO
 sys.path.append('/usr/local/etc')
 import pi_garage_manager_config as cfg
 
-listeningQueue = Queue()
-responseQueue = Queue()
-
 ##############################################################################
 # FIREBASE support https://firebase.google.com/docs/cloud-messaging/
 ##############################################################################
@@ -163,7 +160,7 @@ def get_uptime():
 # Listener thread for getting/setting state and openning/closing the garage
 ##############################################################################
 
-def messageListener():
+def message_listener():
     address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
     listener = Listener(address)
 
@@ -185,161 +182,152 @@ def messageListener():
 ##############################################################################
 # Main functionality
 ##############################################################################
-class PiGarageAlert(object):
-    """Class with main function of Pi Garage Alert"""
+# Queues for comminicating between threads
+listeningQueue = Queue()
+responseQueue = Queue()
 
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
+try:
+    # Set up logging
+    log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
+    log_level = logging.INFO
 
-    def main(self):
-        """Main functionality
-        """
+    if sys.stdout.isatty():
+        # Connected to a real terminal - log to stdout
+        logging.basicConfig(format=log_fmt, level=log_level)
+    else:
+        # Background mode - log to file
+        logging.basicConfig(format=log_fmt, level=log_level, filename=cfg.LOG_FILENAME)
 
-        try:
-            # Set up logging
-            log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
-            log_level = logging.INFO
+    # Banner
+    self.logger.info("==========================================================")
+    self.logger.info("Pi Garage Manager Starting")
 
-            if sys.stdout.isatty():
-                # Connected to a real terminal - log to stdout
-                logging.basicConfig(format=log_fmt, level=log_level)
-            else:
-                # Background mode - log to file
-                logging.basicConfig(format=log_fmt, level=log_level, filename=cfg.LOG_FILENAME)
+    # Use Raspberry Pi board pin numbers
+    GPIO.setmode(GPIO.BOARD)
+    # Configure the sensor pin as input
+    self.logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
+    GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # Configure the control pin for the relay to open and close the garage door
+    GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
 
-            # Banner
-            self.logger.info("==========================================================")
-            self.logger.info("Pi Garage Manager Starting")
+    # Configure global settings
+    door_state = ''
+    time_of_last_state_change = ''
 
-            # Use Raspberry Pi board pin numbers
-            GPIO.setmode(GPIO.BOARD)
-            # Configure the sensor pin as input
-            self.logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
-            GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-            # Configure the control pin for the relay to open and close the garage door
-            GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
+    # Read initial states
+    name = cfg.NAME
+    home_away = 'home'
+    state = get_garage_door_state()
+    door_state = state
+    time_of_last_state_change = time.time()
+    alert_state = False
 
-            # Configure global settings
-            door_state = ''
-            time_of_last_state_change = ''
+    self.logger.info("Initial state of \"%s\" is %s", name, state)
 
-            # Read initial states
-            name = cfg.NAME
-            home_away = 'home'
-            state = get_garage_door_state()
+    # Start garage door trigger listening thread
+    self.logger.info("Listening for commands")
+    messageListenerThread = threading.Thread(target=message_listener)
+    messageListenerThread.setDaemon(True)
+    messageListenerThread.start()
+
+    while True:
+        state = get_garage_door_state()
+        time_in_state = time.time() - time_of_last_state_change
+
+        # Check if the door has changed state
+        if door_state != state:
             door_state = state
             time_of_last_state_change = time.time()
+
+            send_notification(self.logger, name, state, time_in_state, 'data')
+            self.logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
+
+            # Reset time_in_state and alert_state
+            time_in_state = 0
             alert_state = False
 
-            self.logger.info("Initial state of \"%s\" is %s", name, state)
-            
-            # Start garage door trigger listening thread
-            self.logger.info("Listening for commands")
-            messageListenerThread = threading.Thread(target=messageListener)
-            messageListenerThread.setDaemon(True)
-            messageListenerThread.start()
+        # See if there are any alerts
+        for alert in cfg.ALERTS:
+            if not alert_state:
+                # Get start and end times and only alert if current time is in between
+                time_of_day = int(datetime.now().strftime("%H"))
+                start_time = alert['start']
+                end_time = alert['end']
+                send_alert = False
 
-            while True:
-                state = get_garage_door_state()
-                time_in_state = time.time() - time_of_last_state_change
+                # Is start and end hours in the same day?
+                if start_time < end_time:
+                    # Is the current time within the start and end times and has the time elapsed and is this the state to trigger the alert?
+                    if time_of_day >= start_time and time_of_day <= end_time and time_in_state > alert['time'] and state == alert['state']:
+                        send_alert = True
+                else:
+                    if (time_of_day >= start_time or time_of_day <= end_time) and time_in_state > alert['time'] and state == alert['state']:
+                        send_alert = True
 
-                # Check if the door has changed state
-                if door_state != state:
-                    door_state = state
-                    time_of_last_state_change = time.time()
-
-                    send_notification(self.logger, name, state, time_in_state, 'data')
-                    self.logger.info("State of %s changed to %s after %.0f sec", name, state, time_in_state)
-
-                    # Reset time_in_state and alert_state
-                    time_in_state = 0
-                    alert_state = False
-    
-                # See if there are any alerts
-                for alert in cfg.ALERTS:
-                    if not alert_state:
-                        # Get start and end times and only alert if current time is in between
-                        time_of_day = int(datetime.now().strftime("%H"))
-                        start_time = alert['start']
-                        end_time = alert['end']
-                        send_alert = False
-
-                        # Is start and end hours in the same day?
-                        if start_time < end_time:
-                            # Is the current time within the start and end times and has the time elapsed and is this the state to trigger the alert?
-                            if time_of_day >= start_time and time_of_day <= end_time and time_in_state > alert['time'] and state == alert['state']:
-                                send_alert = True
-                        else:
-                            if (time_of_day >= start_time or time_of_day <= end_time) and time_in_state > alert['time'] and state == alert['state']:
-                                send_alert = True
-
-                        if send_alert:
-                            send_notification(self.logger, name, state, time_in_state, 'alert')
-                            alert_state = True
-                            
-                # If system is set to away and the door is a open send an alert
-                if home_away == 'away' and state == 'open' and not alert_state:
+                if send_alert:
                     send_notification(self.logger, name, state, time_in_state, 'alert')
                     alert_state = True
-                
-                # Deal with received messages
-                if not listeningQueue.empty():
-                    received_raw = listeningQueue.get()
-                    received = received_raw.lower()
-                    response = 'unknown command'
-                    trigger = False
 
-                    if received == 'trigger':
-                        trigger = True
-                        if state == 'open':
-                            response = 'closing'
-                        else:
-                            response = 'opening'
-                    elif received == 'open' or received == 'up':
-                        if state == 'open':
-                            response = 'already open'
-                        else:
-                            response = 'opening'
-                            trigger = True
-                    elif received == 'close' or received == 'down':
-                        if state == 'open':
-                            response = 'closing'
-                            trigger = True
-                        else:
-                            response = 'already closed'
-                    elif received == 'home' or received == 'set to home':
-                        home_away = 'home'
-                        response = 'set to home'
-                    elif received == 'away' or received == 'set to away':
-                        home_away = 'away'
-                        response = 'set to away'
-                    elif received == 'state' or received == 'status':
-                        response = state + ' and ' + home_away
-                    elif received.startswith('firebase:'):
-                        cfg.FIREBASE_ID = received_raw.replace('firebase:','')
-                        response = 'ok'
+        # If system is set to away and the door is a open send an alert
+        if home_away == 'away' and state == 'open' and not alert_state:
+            send_notification(self.logger, name, state, time_in_state, 'alert')
+            alert_state = True
 
-                    listeningQueue.task_done()
-                    responseQueue.put(response)
-                    responseQueue.join()
-                    self.logger.info('Received %s. Responded with %s', received_raw, response )
+        # Deal with received messages
+        if not listeningQueue.empty():
+            received_raw = listeningQueue.get()
+            received = received_raw.lower()
+            response = 'unknown command'
+            trigger = False
 
-                    if trigger:
-                        GPIO.output(26, GPIO.LOW)
-                        time.sleep(2)
-                        GPIO.output(26, GPIO.HIGH)
+            if received == 'trigger':
+                trigger = True
+                if state == 'open':
+                    response = 'closing'
+                else:
+                    response = 'opening'
+            elif received == 'open' or received == 'up':
+                if state == 'open':
+                    response = 'already open'
+                else:
+                    response = 'opening'
+                    trigger = True
+            elif received == 'close' or received == 'down':
+                if state == 'open':
+                    response = 'closing'
+                    trigger = True
+                else:
+                    response = 'already closed'
+            elif received == 'home' or received == 'set to home':
+                home_away = 'home'
+                response = 'set to home'
+            elif received == 'away' or received == 'set to away':
+                home_away = 'away'
+                response = 'set to away'
+            elif received == 'state' or received == 'status':
+                response = state + ' and ' + home_away
+            elif received.startswith('firebase:'):
+                cfg.FIREBASE_ID = received_raw.replace('firebase:','')
+                response = 'ok'
 
-                    trigger = False
-                    
-                time.sleep(1)
-				
-        except:
-            logging.critical("Terminating process")
-        finally:
-            GPIO.cleanup()
-            self.logger.error("Exiting pi_garage_manager.py")
-            self.logger.error(sys.exc_info())
-            sys.exit(0)
+            listeningQueue.task_done()
+            responseQueue.put(response)
+            responseQueue.join()
+            self.logger.info('Received %s. Responded with %s', received_raw, response )
 
-if __name__ == "__main__":
-    PiGarageAlert().main()
+            if trigger:
+                GPIO.output(26, GPIO.LOW)
+                time.sleep(2)
+                GPIO.output(26, GPIO.HIGH)
+
+            trigger = False
+
+        time.sleep(1)
+
+except:
+    logging.critical("Terminating process")
+finally:
+    GPIO.cleanup()
+    self.logger.error("Exiting pi_garage_manager.py")
+    self.logger.error(sys.exc_info())
+    sys.exit(0)
