@@ -327,7 +327,8 @@ class PiGarageAlert(object):
             logging.critical("Terminating process")
     finally:
         GPIO.cleanup()
-        self.logger.error("Exiting pi_garage_manager.py: %s", sys.exc_info()[0])
+        self.logger.error("Exiting pi_garage_manager.py")
+	self.logger.error(sys.exc_info())
         sys.exit(0)
 
 if __name__ == "__main__":
