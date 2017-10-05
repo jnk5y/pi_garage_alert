@@ -152,11 +152,9 @@ class Firebase(object):
 	    headers = { "Content-type": "application/json", "Authorization": cfg.FIREBASE_KEY }
             payload = ''
 	    
-	    if value1 == 'sound':
+	    if value1 == 'notification':
 		payload = { "notification": { "title": "Garage door alert", "body": body, "sound": "default" }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-	    elif value1 == 'notification':
-		payload = { "notification": { "title": "Garage door alert", "body": body }, "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
-	    else:
+	    elif value1 == 'data':
 		payload = { "data": { "event": value2 }, "to": cfg.FIREBASE_ID }
 		
 	    try:
