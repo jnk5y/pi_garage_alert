@@ -19,4 +19,4 @@ RUN apt-get update && \
       
 EXPOSE 6000
 
-CMD [ "python", "/usr/local/sbin/pi_garage_alert.py"]
+CMD [ "python", "/usr/local/sbin/pi_garage_manager.py"]
