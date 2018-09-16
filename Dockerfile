@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get install python \
       python-setuptools \
       python-dev \
-      libffi-dev && \
+      libffi-dev \
       gcc && \
     easy_install pip && \
       pip install requests && \
