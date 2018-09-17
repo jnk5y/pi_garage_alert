@@ -27,18 +27,12 @@ PI GARAGE MANAGER WIRING DIAGRAMS
 * Check out the wiki for the wiring diagrams - https://github.com/jnk5y/pi_garage_manager/wiki
 	
 RUNNING PI_GARAGE_MANAGER
-* `sudo apt-get install python-setuptools python-dev libffi-dev`
-* `sudo easy_install pip`
-* `sudo pip install requests`
-* `sudo pip install requests[security]`
-* `sudo pip install httplib2`
-* Edit the etc/pi_garage_manager_config.py file
+* Edit the pi_garage_manager_config.py file
 	* Modify the alert section to suit your alerting needs
 	* Add your firebase key
-* Run the install.sh script `sudo bash ./install.sh`
-	* The install script will copy bin/pi_garage_manager.py to /usr/local/sbin, etc/pi_garage_manager_config.py to /usr/local/etc, init.d/pi_garage_manager to /etc/init.d and make pi_garage_manager.py start on startup
-* To run the pi_garage_manager service run `sudo service pi_garage_manager start`
-* At this point, the Pi Garage Manager software should be running. You can view its log in /var/log/pi_garage_manager.log. You can use the garage_trigger.py script found in bin/ to send commands to the service to open/close the garage door.
+* type 'docker build -t pi_garage_manager_image .' in the folder with the Dockerfile to create the docker image
+* type 'docker run -d --restart unless-stopped --device /dev/ttyAMA0:/dev/ttyAMA0 --device /dev/mem:/dev/mem --privileged --name pi_garage_manager -p 6000:6000 pi_garage_manager_image' to run the container.
+* At this point, the Pi Garage Manager software should be running. You can use the garage_trigger.py script to send commands to the service to open/close the garage door.
 
 Thanks to:
 * Shane Rowley - https://github.com/smrowley
