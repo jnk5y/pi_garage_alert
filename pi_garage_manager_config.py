@@ -33,7 +33,7 @@ LOG_FILENAME = "/var/log/pi_garage_manager.log"
 FIREBASE_KEY = 'key='
 
 ##############################################################################
-# IP address that pi garage manager is running on
+# Port that pi garage manager is listening on.
+# Should match what's in the Dockerfile
 ##############################################################################
-NETWORK_IP = '192.168.86.9'
 NETWORK_PORT = '6000'
