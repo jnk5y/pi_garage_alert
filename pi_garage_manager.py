@@ -159,7 +159,8 @@ def get_uptime():
 ##############################################################################
 
 def message_listener():
-    address = (cfg.NETWORK_IP, int(cfg.NETWORK_PORT))
+    host = socket.gethostname()
+    address = (host, int(cfg.NETWORK_PORT))
     listener = Listener(address)
 
     while True:
