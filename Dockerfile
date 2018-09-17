@@ -9,13 +9,16 @@ RUN chmod +x /usr/local/sbin/pi_garage_manager.py && \
 RUN apt-get update && \
     apt-get install python \
       python-setuptools \
+      build-essential \
       python-dev \
       libffi-dev \
       gcc && \
     easy_install pip && \
-      pip install requests && \
-      pip install httplib2 && \
-      pip install RPi.GPIO 
+    pip install --upgrade pip && \
+    pip install --upgrade setuptools && \
+    pip install requests && \
+    pip install httplib2 && \
+    pip install RPi.GPIO 
       
 EXPOSE 6000
 
