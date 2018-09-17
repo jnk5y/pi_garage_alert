@@ -30,8 +30,8 @@ RUNNING PI_GARAGE_MANAGER
 * Edit the pi_garage_manager_config.py file
 	* Modify the alert section to suit your alerting needs
 	* Add your firebase key
-* type 'docker build -t pi_garage_manager_image .' in the folder with the Dockerfile to create the docker image
-* type 'docker run -d --restart unless-stopped --device /dev/ttyAMA0:/dev/ttyAMA0 --device /dev/mem:/dev/mem --privileged --name pi_garage_manager -p 6000:6000 pi_garage_manager_image' to run the container.
+* type `docker build -t pi_garage_manager_image .' in the folder with the Dockerfile to create the docker image`
+* type `docker run -d --restart unless-stopped --device /dev/ttyAMA0:/dev/ttyAMA0 --device /dev/mem:/dev/mem --privileged --name pi_garage_manager -p 6000:6000 pi_garage_manager_image' to run the container.`
 * At this point, the Pi Garage Manager software should be running. You can use the garage_trigger.py script to send commands to the service to open/close the garage door.
 
 Thanks to:
