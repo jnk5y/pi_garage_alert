@@ -36,4 +36,5 @@ FIREBASE_KEY = 'key='
 # Port that pi garage manager is listening on.
 # Should match what's in the Dockerfile
 ##############################################################################
+NETWORK_ADDRESS = '192.168.86.9'
 NETWORK_PORT = '6000'
