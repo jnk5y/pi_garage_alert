@@ -134,7 +134,7 @@ def format_duration(duration_sec):
     return ret
 
 def get_garage_door_state():
-    """Returns the state of the garage door
+    """Returns the state of the garage door"""
 
     if pi.read(22):
         state = 'open'
@@ -144,8 +144,7 @@ def get_garage_door_state():
     return state
 
 def get_uptime():
-    """Returns the uptime of the RPi as a string
-    """
+    """Returns the uptime of the RPi as a string"""
     with open('/proc/uptime', 'r') as uptime_file:
         uptime_seconds = int(float(uptime_file.readline().split()[0]))
         uptime_string = str(timedelta(seconds=uptime_seconds))
@@ -200,7 +199,7 @@ try:
     logger.info("Pi Garage Manager Starting")
 
     # Initialize pigpio
-    pi = pigpio.pi()
+    pi = pigpio.pi(cfg.NETWORK_ADDRESS)
     logger.info("Configuring pin 15(GPIO 22) and 26(GPIO 7) for %s", cfg.NAME)
     # Configure the sensor pin as input
     pi.set_mode(22, pigpio.INPUT)
