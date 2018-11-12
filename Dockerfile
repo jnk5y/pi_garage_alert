@@ -6,8 +6,8 @@ COPY pi_garage_manager.py /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/pi_garage_manager.py && \
     chmod +x /usr/local/etc/pi_garage_manager_config.py
 
-RUN apt-get update && \
-    apt-get install python \
+RUN apt-get update && apt-get install -y && \
+    apt-get install -y python \
       python-setuptools \
       build-essential \
       python-dev \
