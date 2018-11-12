@@ -134,12 +134,9 @@ def format_duration(duration_sec):
     return ret
 
 def get_garage_door_state():
-    """Returns the state of the garage door on the specified pin as a string
+    """Returns the state of the garage door
 
-    Args:
-        pin: GPIO pin number.
-    """
-    if pi.read(22): # pylint: disable=no-member
+    if pi.read(22):
         state = 'open'
     else:
         state = 'closed'
@@ -329,7 +326,7 @@ try:
 except:
     logging.critical("Terminating process")
 finally:
-    GPIO.cleanup()
+    pi.stop()
     logger.error("Exiting pi_garage_manager.py")
     logger.error(sys.exc_info())
     sys.exit(0)
