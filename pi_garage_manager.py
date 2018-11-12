@@ -53,7 +53,7 @@ import subprocess
 import threading
 import requests
 import httplib2
-import RPi.GPIO as GPIO
+import pigpio
 
 sys.path.append('/usr/local/etc')
 import pi_garage_manager_config as cfg
@@ -139,7 +139,7 @@ def get_garage_door_state():
     Args:
         pin: GPIO pin number.
     """
-    if GPIO.input(15): # pylint: disable=no-member
+    if pi.read(22): # pylint: disable=no-member
         state = 'open'
     else:
         state = 'closed'
@@ -202,13 +202,14 @@ try:
     logger.info("==========================================================")
     logger.info("Pi Garage Manager Starting")
 
-    # Use Raspberry Pi board pin numbers
-    GPIO.setmode(GPIO.BOARD)
+    # Initialize pigpio
+    pi = pigpio.pi()
+    logger.info("Configuring pin 15(GPIO 22) and 26(GPIO 7) for %s", cfg.NAME)
     # Configure the sensor pin as input
-    logger.info("Configuring pin 15 and 26 for %s", cfg.NAME)
-    GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    pi.set_mode(22, pigpio.INPUT)
+    pi.set_pull_up_down(23, pigpio.PUD_UP)
     # Configure the control pin for the relay to open and close the garage door
-    GPIO.setup(26, GPIO.OUT, initial=GPIO.HIGH)
+    pi.set_mode(7, pigpio.OUTPUT)
 
     # Configure global settings
     door_state = ''
@@ -317,9 +318,9 @@ try:
             logger.info('Received %s. Responded with %s', received_raw, response )
 
             if trigger:
-                GPIO.output(26, GPIO.LOW)
+		pi.write(7,0)
                 time.sleep(2)
-                GPIO.output(26, GPIO.HIGH)
+                pi.write(7,1)
 
             trigger = False
 
