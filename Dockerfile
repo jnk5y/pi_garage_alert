@@ -1,4 +1,4 @@
-FROM resin/rpi-raspbian
+FROM python:stretch
 
 COPY pi_garage_manager_config.py /usr/local/etc/
 COPY pi_garage_manager.py /usr/local/sbin/
@@ -7,8 +7,7 @@ RUN chmod +x /usr/local/sbin/pi_garage_manager.py && \
     chmod +x /usr/local/etc/pi_garage_manager_config.py
 
 RUN apt-get update && \
-    apt-get install python \
-      python-setuptools \
+    apt-get install python-setuptools \
       build-essential \
       python-dev \
       libffi-dev \
@@ -18,7 +17,7 @@ RUN apt-get update && \
     pip install --upgrade setuptools && \
     pip install requests && \
     pip install httplib2 && \
-    pip install RPi.GPIO 
+    pip install pigpio
       
 EXPOSE 6000
 
