@@ -41,17 +41,10 @@ import signal
 import json
 import logging
 import traceback
-import socket
 import time
 from time import strftime
 from datetime import datetime
 from datetime import timedelta
-from Queue import Queue
-from multiprocessing.connection import Listener
-import multiprocessing
-import subprocess
-import threading
-import requests
 import httplib2
 import pigpio
 
@@ -151,36 +144,8 @@ def get_uptime():
     return uptime_string
 
 ##############################################################################
-# Listener thread for getting/setting state and openning/closing the garage
-##############################################################################
-
-def message_listener():
-    host = socket.gethostname()
-    address = (host, int(cfg.NETWORK_PORT))
-    listener = Listener(address)
-
-    while True:
-        # Receive incomming communications
-        conn = listener.accept()
-        received_raw = ''
-        received_raw = conn.recv_bytes()
-        listeningQueue.put(received_raw)
-        listeningQueue.join()
-        response = responseQueue.get()
-        conn.send_bytes(response)
-        responseQueue.task_done()
-        time.sleep(1)
-
-    conn.close()
-    listener.close()
-
-##############################################################################
 # Main functionality
 ##############################################################################
-# Queues for comminicating between threads
-listeningQueue = Queue()
-responseQueue = Queue()
-
 # Set up logging
 logger = logging.getLogger('pi_garage_manager')
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
@@ -221,12 +186,6 @@ try:
     alert_state = False
 
     logger.info("Initial state of \"%s\" is %s", name, state)
-
-    # Start garage door trigger listening thread
-    logger.info("Listening for commands")
-    messageListenerThread = threading.Thread(target=message_listener)
-    messageListenerThread.setDaemon(True)
-    messageListenerThread.start()
 
     while True:
         state = get_garage_door_state()
@@ -270,55 +229,6 @@ try:
         if home_away == 'away' and state == 'open' and not alert_state:
             send_notification(logger, name, state, time_in_state, 'alert', firebase_id)
             alert_state = True
-
-        # Deal with received messages
-        if not listeningQueue.empty():
-            received_raw = listeningQueue.get()
-            received = received_raw.lower()
-            response = 'unknown command'
-            trigger = False
-
-            if received == 'trigger':
-                trigger = True
-                if state == 'open':
-                    response = 'closing'
-                else:
-                    response = 'opening'
-            elif received == 'open' or received == 'up':
-                if state == 'open':
-                    response = 'already open'
-                else:
-                    response = 'opening'
-                    trigger = True
-            elif received == 'close' or received == 'down':
-                if state == 'open':
-                    response = 'closing'
-                    trigger = True
-                else:
-                    response = 'already closed'
-            elif received == 'home' or received == 'set to home':
-                home_away = 'home'
-                response = 'set to home'
-            elif received == 'away' or received == 'set to away':
-                home_away = 'away'
-                response = 'set to away'
-            elif received == 'state' or received == 'status':
-                response = state + ' and ' + home_away
-            elif received.startswith('firebase:'):
-                firebase_id = received_raw.replace('firebase:','')
-                response = 'ok'
-
-            listeningQueue.task_done()
-            responseQueue.put(response)
-            responseQueue.join()
-            logger.info('Received %s. Responded with %s', received_raw, response )
-
-            if trigger:
-		pi.write(7,0)
-                time.sleep(2)
-                pi.write(7,1)
-
-            trigger = False
 
         time.sleep(1)
 
