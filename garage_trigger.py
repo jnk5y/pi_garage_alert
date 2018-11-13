@@ -19,8 +19,12 @@ else:
     # Configure the control pin for the relay to open and close the garage door
     pi.set_mode(7, pigpio.OUTPUT)
 
-    
-    # Deal with received messages
+    state = ''
+    if pi.read(22):
+        state = 'open'
+    else:
+        state = 'closed'
+
     received_raw = sys.argv[1]
     received = received_raw.lower()
     response = 'unknown command'
